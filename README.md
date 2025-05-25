@@ -37,7 +37,7 @@ Use context menu on right click to change settings (scaling, always on top toggl
 7. manual update
 8. ability to change widget update time
 
-Todo:
+## Todo:
 1. make theme customizing
 2. make other statistic popup at hover
 3. give the ability to switch the number of days to best streak or current streak or total participation (now its only total participation)
