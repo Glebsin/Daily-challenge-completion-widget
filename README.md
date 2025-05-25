@@ -57,5 +57,7 @@ Use context menu on right click to change settings (scaling, always on top toggl
 - Make other statistic popup at hover
 - Make ability to switch the number of days to best streak or current streak or total participation (now its only total participation)
 - Make right colors for all number of days
+- Align input fields across the entire width of the context menu
+- Make the "F5" button work when the context menu is open
 
 <sub>727</sub>
