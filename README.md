@@ -18,7 +18,7 @@ i don't know how to code
 
 This widget is designed for tracking daily challenge completion
 
-**HOW TO USE:**
+## HOW TO USE:
 
 Download executable in releases or compile widget.py (ask copilot or chatgpt how) (**WARNING**: next to the executable file, a settings file widget_settings.json is created, it is better to open the executable file in a separate folder).
 
