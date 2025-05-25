@@ -28,12 +28,12 @@ Use context menu on right click to change settings (scaling, always on top toggl
 
 # Screenshots
 
-<p align="left" width="48%" style="display: inline-block; text-align: center;">
-  <img src="misc/images/screenshot-uncompleted.png" width="150"/><br>
+<p align="left" width="50%" style="display: inline-block; text-align: center;">
+  <img src="misc/images/screenshot-uncompleted.png" width="250"/><br>
   <sub>Uncomplited widget</sub>
 </p>
-<p align="right" width="48%" style="display: inline-block; text-align: center;">
-  <img src="misc/images/screenshot-completed.png" width="150"/><br>
+<p align="right" width="50%" style="display: inline-block; text-align: center;">
+  <img src="misc/images/screenshot-completed.png" width="250"/><br>
   <sub>Complited widget</sub>
 </p>
 
