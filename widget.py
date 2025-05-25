@@ -103,6 +103,12 @@ class TransparentWindow(QMainWindow):
         self.always_on_top = self.settings.get('always_on_top', True)
         self.enable_logging = False if getattr(sys, 'frozen', False) else self.settings.get('enable_logging', False)
 
+        self.open_context_menu = None
+        self.menu_time_action = None
+        self.menu_time_timer = QTimer(self)
+        self.menu_time_timer.setInterval(1000)
+        self.menu_time_timer.timeout.connect(self._update_menu_time_action)
+
         if getattr(sys, 'frozen', False) and self.settings.get('autostart', True):
             add_to_startup_registry()
 
@@ -120,7 +126,6 @@ class TransparentWindow(QMainWindow):
         self.update_timer.start(self.update_interval)
 
     def calculate_days_since_start(self):
-        """Возвращает текущую дату на компьютере в формате 'YYYY-MM-DD'"""
         now = datetime.now(timezone.utc)
         date_only = now.strftime('%Y-%m-%d')
         return date_only
@@ -138,9 +143,8 @@ class TransparentWindow(QMainWindow):
                 api = Ossapi(self.osu_client_id, self.osu_client_secret)
                 user = api.user(self.osu_username)
                 streak_value = user.daily_challenge_user_stats.playcount
-                last_update_date = user.daily_challenge_user_stats.last_update  # Может быть строка или datetime
+                last_update_date = user.daily_challenge_user_stats.last_update
 
-                # Получаем дату в формате YYYY-MM-DD из last_update_date
                 if isinstance(last_update_date, str):
                     last_update_str = last_update_date.split(" ")[0]
                 elif isinstance(last_update_date, datetime):
@@ -148,7 +152,7 @@ class TransparentWindow(QMainWindow):
                 else:
                     last_update_str = None
 
-                today_str = self.calculate_days_since_start()  # Текущая дата в формате YYYY-MM-DD
+                today_str = self.calculate_days_since_start()
 
                 if self.enable_logging:
                     print(f"[Widget] Today: {today_str}, Last update: {last_update_str}")
@@ -187,22 +191,45 @@ class TransparentWindow(QMainWindow):
         current_template = ALTERNATIVE_TEMPLATE if self.use_alternative_template else DEFAULT_TEMPLATE
         local_time = datetime.now().astimezone()
         local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
+        prevent_ctrl_a_js = """
+        <script>
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
+                e.preventDefault();
+            }
+        });
+        </script>
+        """
         html_content = current_template.format(
             current_time=local_time_str,
             current_user=self.osu_username,
             daily_streak=streak_value
         )
+        if '</body>' in html_content:
+            html_content = html_content.replace('</body>', prevent_ctrl_a_js + '</body>')
+        else:
+            html_content += prevent_ctrl_a_js
         if hasattr(self, 'webView'):
             self.webView.setHtml(html_content)
             if self.enable_logging:
                 print(f"[Widget] Streak value updated: {streak_value}")
                 print(f"[Widget] Using {'ALTERNATIVE' if self.use_alternative_template else 'DEFAULT'} template")
         self.last_update_time = datetime.now(timezone.utc)
+        self._update_menu_time_action()
 
     def _on_update_timer(self):
         self.update_streak()
         self.update_timer.stop()
         self.update_timer.start(self.update_interval)
+
+    def _update_menu_time_action(self):
+        if self.open_context_menu and self.menu_time_action:
+            if self.last_update_time:
+                local_update_time = self.last_update_time.astimezone()
+                update_str = local_update_time.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                update_str = "-"
+            self.menu_time_action.setText(f'Updated: {update_str}')
 
     def load_settings(self):
         try:
@@ -255,7 +282,6 @@ class TransparentWindow(QMainWindow):
                 'x': int(self.geometry().x()),
                 'y': int(self.geometry().y())
             }
-            # --- ЛОГИРОВАНИЕ СОХРАНЕНИЯ ПОЗИЦИИ УДАЛЕНО ---
             settings = {
                 'position': current_pos,
                 'scale': self.scale,
@@ -280,7 +306,6 @@ class TransparentWindow(QMainWindow):
                     os.rename(temp_file, self.settings_file)
             else:
                 os.rename(temp_file, self.settings_file)
-            # --- ЛОГИРОВАНИЕ УСПЕШНОГО СОХРАНЕНИЯ УДАЛЕНО ---
         except Exception as e:
             if self.enable_logging:
                 print(f"[Settings] Error saving settings: {e}")
@@ -373,6 +398,15 @@ class TransparentWindow(QMainWindow):
                 background: transparent !important;
             }
         """
+        prevent_ctrl_a_js = """
+        <script>
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
+                e.preventDefault();
+            }
+        });
+        </script>
+        """
         current_template = ALTERNATIVE_TEMPLATE if self.use_alternative_template else DEFAULT_TEMPLATE
         local_time = datetime.now().astimezone()
         local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -381,6 +415,10 @@ class TransparentWindow(QMainWindow):
             current_user=self.osu_username,
             daily_streak="0d"
         ).replace('</style>', additional_style + '</style>')
+        if '</body>' in html_content:
+            html_content = html_content.replace('</body>', prevent_ctrl_a_js + '</body>')
+        else:
+            html_content += prevent_ctrl_a_js
         self.webView.page().setBackgroundColor(Qt.transparent)
         self.webView.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.webView.setHtml(html_content)
@@ -506,6 +544,15 @@ class TransparentWindow(QMainWindow):
                 background: transparent !important;
             }
         """
+        prevent_ctrl_a_js = """
+        <script>
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
+                e.preventDefault();
+            }
+        });
+        </script>
+        """
         current_template = ALTERNATIVE_TEMPLATE if self.use_alternative_template else DEFAULT_TEMPLATE
         streak_value = self.get_daily_streak()
         local_time = datetime.now().astimezone()
@@ -515,6 +562,10 @@ class TransparentWindow(QMainWindow):
             current_user=self.osu_username,
             daily_streak=streak_value
         ).replace('</style>', additional_style + '</style>')
+        if '</body>' in html_content:
+            html_content = html_content.replace('</body>', prevent_ctrl_a_js + '</body>')
+        else:
+            html_content += prevent_ctrl_a_js
         self.webView.page().setBackgroundColor(Qt.transparent)
         self.webView.setAttribute(Qt.WA_TransparentForMouseEvents)
         self.webView.setHtml(html_content)
@@ -715,6 +766,9 @@ QComboBox QAbstractItemView::item {{
         timeAction = QAction(f'Updated: {update_str}', self)
         timeAction.setEnabled(False)
         menu.addAction(timeAction)
+        self.open_context_menu = menu
+        self.menu_time_action = timeAction
+        self.menu_time_timer.start()
         menu.addSeparator()
         exitAction = menu.addAction('Exit')
         exitAction.triggered.connect(self.closeApp)
@@ -758,6 +812,9 @@ QComboBox QAbstractItemView::item {{
         menu.exec_(pos)
         scaleInput.setFocus()
         scaleInput.selectAll()
+        self.open_context_menu = None
+        self.menu_time_action = None
+        self.menu_time_timer.stop()
 
     def closeApp(self):
         current_pos = {
@@ -819,7 +876,6 @@ QComboBox QAbstractItemView::item {{
                 'y': int(self.geometry().y())
             }
             self.save_settings()
-        # Не выводим логи о перемещении даже если enable_logging True
 
     def mousePressEvent(self, event):
         if event.button() == Qt.RightButton:
