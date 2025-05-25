@@ -41,19 +41,6 @@ Use context menu on right click to change settings (scaling, always on top toggl
   </tr>
 </table>
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="misc/images/screenshot-uncompleted.png" alt="Uncomplitied widget" height="120"/><br>
-      <sub>Uncomplitied widget</sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="misc/images/screenshot-completed.png" alt="Complitied widget" height="120" style="object-fit: contain;"/><br>
-      <sub>Complitied widget</sub>
-    </td>
-  </tr>
-</table>
-
 # Features
 
 - Scaling from 100% to 500%
