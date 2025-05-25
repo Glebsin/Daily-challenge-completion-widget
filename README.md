@@ -26,7 +26,7 @@ For statistics update you need create "New OAuth Application" here - https://osu
 
 Use context menu on right click to change settings (scaling, always on top toggle, run at startup toggle, change updating time, view last update statistic time, exit).
 
-Functions:
+## Functions:
 
 1. scaling from 100 to 500%
 2. scaling and position save
