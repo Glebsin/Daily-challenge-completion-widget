@@ -2,13 +2,15 @@
     DCCW (Daily challenge completion widget)
 </h1>
 
+<div align="center">This widget designed for tracking daily challenge completion</div>
+
 <div align="center">
-  <a href="https://github.com/Glebsin/Daily-challenge-completion-widget/releases/tag/2025.524.0">
+  <a href="https://github.com/Glebsin/Daily-challenge-completion-widget/releases/tag/2025.526.0">
     <img src="misc/images/button-download.png" alt="download" />
   </a>
 </div>
 
-## **WARNING**
+# **WARNING**
 
 **TESTED ONLY ON WINDOWS 10**
 
@@ -16,31 +18,51 @@ i don't know how to code
 
 98% github copilot + 1% chatgpt + 1% me
 
-This widget is designed for tracking daily challenge completion
+# HOW TO USE
 
-**HOW TO USE:**
+Download DCCW.zip in releases (**WARNING**: next to the executable file, a settings file widget_settings.json is created, it is better to open the executable file in a separate folder).
 
-Download executable in releases or compile widget.py (ask copilot or chatgpt how) (**WARNING**: next to the executable file, a settings file widget_settings.json is created, it is better to open the executable file in a separate folder).
-
-For statistics update you need create "New OAuth Application" here - https://osu.ppy.sh/home/account/edit#oauth (as an example in the "Application Callback URLs" field you can specify `http://localhost:3456/`), then you need open widget settings (right click) and paste Client ID, Client Secret and username.
+For statistics update you need create "New OAuth Application" here - https://osu.ppy.sh/home/account/edit#oauth (as an example in the "Application Callback URLs" field you can specify `http://localhost:3456/`), then you need open widget settings (right click) and paste **Client ID**, **Client Secret** and **username**.
 
 Use context menu on right click to change settings (scaling, always on top toggle, run at startup toggle, change updating time, view last update statistic time, exit).
 
-Functions:
+# Screenshots
 
-1. scaling from 100 to 500%
-2. scaling and position save
-3. sticking to the edge of the screen
-4. always on top switch
-5. precise movement of the widget by arrows
-6. autostart
-7. manual update
-8. ability to change widget update time
+<div align="center">
+<table>
+  <tr>
+    <td align="center">
+      <img src="misc/images/screenshot-uncompleted.png" alt="Uncompleted daily challenge widget"/><br>
+      <sub>Uncompleted daily challenge widget</sub>
+    </td>
+    <td align="center">
+      <img src="misc/images/screenshot-completed.png" alt="Completed daily challenge widget"/><br>
+      <sub>Completed daily challenge widget</sub>
+    </td>
+  </tr>
+    <tr>
+    <td colspan="2" align="center">
+      <img src="misc/images/screenshot-contextmenu.png" alt="Long preview" />
+      <br>
+      <sub>Context menu</sub>
+    </td>
+  </tr>
+</table>
+</div>
 
-Todo:
-1. make theme customizing
-2. make other statistic popup at hover
-3. give the ability to switch the number of days to best streak or current streak or total participation (now its only total participation)
-4. make right colors for all number of days
+# Features
+
+- Scaling from 100% to 500%
+- Scaling and position save
+- Sticking to the edge of the screen
+- Always on top switch
+- Precise movement of widget by arrows
+- Autostart
+- Manual update on button in context menu and on "F5"
+- Ability to change widget update time
+- Right colors for all number of days
+
+# My osu profile
+- https://osu.ppy.sh/u/glebsin
 
 <sub>727</sub>
