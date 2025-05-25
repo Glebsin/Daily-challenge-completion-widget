@@ -34,7 +34,7 @@ Use context menu on right click to change settings (scaling, always on top toggl
 - Always on top switch
 - Precise movement of the widget by arrows
 - Autostart
-- Manual update
+- Manual update on button in context menu and on "F5"
 - Ability to change widget update time
 
 # Todo
