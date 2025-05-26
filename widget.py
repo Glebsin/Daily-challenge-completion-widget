@@ -598,7 +598,7 @@ class TransparentWindow(QMainWindow):
                 scaleInput.setText(str(self.scale))
         scaleInput = SaveOnFocusOutLineEdit(updateScale)
         scaleInput.setText(str(self.scale))
-        scaleInput.setFixedWidth(100)
+        scaleInput.setFixedWidth(230)
         scaleInput.setStyleSheet("""
             QLineEdit {
                 background-color: #3D3D3D;
@@ -634,7 +634,7 @@ class TransparentWindow(QMainWindow):
         clientIdInput = SaveOnFocusOutLineEdit(updateOsuFields)
         clientIdInput.setText(self.osu_client_id)
         clientIdInput.setPlaceholderText("Enter client ID")
-        clientIdInput.setFixedWidth(200)
+        clientIdInput.setFixedWidth(230)
         clientIdInput.setStyleSheet("""
             QLineEdit {
                 background-color: #3D3D3D;
@@ -650,7 +650,7 @@ class TransparentWindow(QMainWindow):
         clientSecretInput = SaveOnFocusOutLineEdit(updateOsuFields)
         clientSecretInput.setText(self.osu_client_secret)
         clientSecretInput.setPlaceholderText("Enter client secret")
-        clientSecretInput.setFixedWidth(200)
+        clientSecretInput.setFixedWidth(230)
         clientSecretInput.setStyleSheet("""
             QLineEdit {
                 background-color: #3D3D3D;
@@ -666,7 +666,7 @@ class TransparentWindow(QMainWindow):
         usernameInput = SaveOnFocusOutLineEdit(updateOsuFields)
         usernameInput.setText(self.osu_username)
         usernameInput.setPlaceholderText("Enter username")
-        usernameInput.setFixedWidth(200)
+        usernameInput.setFixedWidth(230)
         usernameInput.setStyleSheet("""
             QLineEdit {
                 background-color: #3D3D3D;
