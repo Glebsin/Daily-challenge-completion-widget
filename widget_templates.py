@@ -23,7 +23,16 @@ DEFAULT_TEMPLATE = """
     --forum-item-background-color-hover: hsl(var(--hsl-b3));
     --base-hue: var(--base-hue-override, var(--base-hue-default));
     --base-hue-deg: calc(var(--base-hue)*1deg);
-    --level-tier-platinum: #a8f0ef, #52e0df;
+
+    --level-tier-iron: #bab3ab,#bab3ab;
+    --level-tier-bronze: #b88f7a,#855c47;
+    --level-tier-silver: #e0e0eb,#a3a3c2;
+    --level-tier-gold: #f0e4a8,#e0c952;
+    --level-tier-platinum: #a8f0ef,#52e0df;
+    --level-tier-rhodium: #d9f8d3,#a0cf96;
+    --level-tier-radiant: #97dcff,#ed82ff;
+    --level-tier-lustrous: #ffe600,#ed82ff;
+
     font-family: var(--font-default-override, var(--font-default));
     position: static;
     margin: 0;
@@ -95,7 +104,7 @@ DEFAULT_TEMPLATE = """
   }}
 
   .daily-challenge__value {{
-    --colour: var(--level-tier-platinum);
+    --colour: var({streak_colour_var});
     background: linear-gradient(45deg, var(--colour));
     -webkit-background-clip: text;
     background-clip: text;
@@ -159,6 +168,7 @@ body {{
     --forum-item-background-color-hover: hsl(var(--hsl-b3));
     --base-hue: var(--base-hue-override,var(--base-hue-default));
     --base-hue-deg: calc(var(--base-hue)*1deg);
+
     --level-tier-iron: #bab3ab,#bab3ab;
     --level-tier-bronze: #b88f7a,#855c47;
     --level-tier-silver: #e0e0eb,#a3a3c2;
@@ -167,6 +177,7 @@ body {{
     --level-tier-rhodium: #d9f8d3,#a0cf96;
     --level-tier-radiant: #97dcff,#ed82ff;
     --level-tier-lustrous: #ffe600,#ed82ff;
+
     font-family: var(--font-default-override,var(--font-default));
     margin: 0;
     position: static
@@ -213,7 +224,7 @@ body {{
 }}
 
 .daily-challenge__value {{
-    --colour: hsl(var(--hsl-c2));
+    --colour: var({streak_colour_var});
     -webkit-background-clip: text;
     background-image: linear-gradient(var(--colour));
     color: transparent;
@@ -333,7 +344,7 @@ body {{
                   <div>Challenge</div>
                 </div>
                 <div class="daily-challenge__value-box">
-                  <div class="daily-challenge__value" style="--colour: var(--level-tier-platinum);" title="Last updated: {current_time}&#13;User: {current_user}">{daily_streak}</div>
+                  <div class="daily-challenge__value" style="--colour: var({streak_colour_var});" title="Last updated: {current_time}&#13;User: {current_user}">{daily_streak}</div>
                 </div>
               </div>
             </div>

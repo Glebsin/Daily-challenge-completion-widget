@@ -137,6 +137,28 @@ class TransparentWindow(QMainWindow):
         date_only = now.strftime('%Y-%m-%d')
         return date_only
 
+    def get_streak_colour_var(self, streak_value):
+        try:
+            streak = int(str(streak_value).replace('d',''))
+        except Exception:
+            return '--level-tier-iron'
+        if streak >= 1080:
+            return '--level-tier-lustrous'
+        elif streak >= 720:
+            return '--level-tier-radiant'
+        elif streak >= 360:
+            return '--level-tier-rhodium'
+        elif streak >= 180:
+            return '--level-tier-platinum'
+        elif streak >= 90:
+            return '--level-tier-gold'
+        elif streak >= 30:
+            return '--level-tier-silver'
+        elif streak >= 15:
+            return '--level-tier-bronze'
+        else:
+            return '--level-tier-iron'
+
     def get_daily_streak(self):
         try:
             if not self.osu_client_id or not self.osu_client_secret or not self.osu_username:
@@ -195,6 +217,7 @@ class TransparentWindow(QMainWindow):
         if self.enable_logging:
             print("[Widget] Updating streak value...")
         streak_value = self.get_daily_streak()
+        streak_colour_var = self.get_streak_colour_var(streak_value)
         current_template = ALTERNATIVE_TEMPLATE if self.use_alternative_template else DEFAULT_TEMPLATE
         local_time = datetime.now().astimezone()
         local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -210,7 +233,8 @@ class TransparentWindow(QMainWindow):
         html_content = current_template.format(
             current_time=local_time_str,
             current_user=self.osu_username,
-            daily_streak=streak_value
+            daily_streak=streak_value,
+            streak_colour_var=streak_colour_var
         )
         if '</body>' in html_content:
             html_content = html_content.replace('</body>', prevent_ctrl_a_js + '</body>')
@@ -417,10 +441,13 @@ class TransparentWindow(QMainWindow):
         current_template = ALTERNATIVE_TEMPLATE if self.use_alternative_template else DEFAULT_TEMPLATE
         local_time = datetime.now().astimezone()
         local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
+        streak_value = "0d"
+        streak_colour_var = self.get_streak_colour_var(streak_value)
         html_content = current_template.format(
             current_time=local_time_str,
             current_user=self.osu_username,
-            daily_streak="0d"
+            daily_streak=streak_value,
+            streak_colour_var=streak_colour_var
         ).replace('</style>', additional_style + '</style>')
         if '</body>' in html_content:
             html_content = html_content.replace('</body>', prevent_ctrl_a_js + '</body>')
@@ -562,12 +589,14 @@ class TransparentWindow(QMainWindow):
         """
         current_template = ALTERNATIVE_TEMPLATE if self.use_alternative_template else DEFAULT_TEMPLATE
         streak_value = self.get_daily_streak()
+        streak_colour_var = self.get_streak_colour_var(streak_value)
         local_time = datetime.now().astimezone()
         local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
         html_content = current_template.format(
             current_time=local_time_str,
             current_user=self.osu_username,
-            daily_streak=streak_value
+            daily_streak=streak_value,
+            streak_colour_var=streak_colour_var
         ).replace('</style>', additional_style + '</style>')
         if '</body>' in html_content:
             html_content = html_content.replace('</body>', prevent_ctrl_a_js + '</body>')
