@@ -29,6 +29,10 @@ class NoSelectWebEngineView(QWebEngineView):
         super().keyPressEvent(event)
 
 class NonClosingMenu(QMenu):
+    def __init__(self, parent_window, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.parent_window = parent_window
+
     def mouseReleaseEvent(self, e):
         action = self.activeAction()
         if action and isinstance(action, QWidgetAction):
@@ -40,6 +44,9 @@ class NonClosingMenu(QMenu):
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Return or e.key() == Qt.Key_Enter:
             e.ignore()
+        elif e.key() == Qt.Key_F5:
+            if self.parent_window:
+                self.parent_window.update_streak()
         else:
             super().keyPressEvent(e)
 
