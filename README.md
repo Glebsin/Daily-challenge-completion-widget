@@ -63,8 +63,10 @@ Use context menu on right click to change settings (scaling, always on top toggl
 - Right colors for all number of days
 
 # Todo
+- Make android widget (?)
 - Make theme customizing
 - Make other statistic popup at hover
+- Fix gradients (it seems to me that they are broken at some numbers)
 - Make ability to switch the number of days to best streak or current streak or total participation (now its only total participation)
 - Prevent opening more than one widget (and maybe later make possible create two or more widgets with saving their settings)
 - Make tray icon
