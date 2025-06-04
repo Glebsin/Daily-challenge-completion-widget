@@ -1,4 +1,14 @@
 from datetime import datetime, timezone
+from ossapi import Ossapi
+from widget_templates import DEFAULT_TEMPLATE, ALTERNATIVE_TEMPLATE
+
+UPDATE_INTERVALS = [
+    (5 * 60 * 1000, "5 minutes"),
+    (10 * 60 * 1000, "10 minutes"),
+    (15 * 60 * 1000, "15 minutes"),
+    (30 * 60 * 1000, "30 minutes"),
+    (60 * 60 * 1000, "60 minutes"),
+]
 
 def get_daily_streak(
     osu_client_id,
@@ -57,3 +67,66 @@ def get_daily_streak(
             print(f"[osu!api] Error getting daily streak: {e}")
         use_alternative_template = False
         return '0d', use_alternative_template, new_last_update_time
+
+def get_streak_colour_var(streak_value):
+    try:
+        streak = int(str(streak_value).replace('d', '')) if streak_value is not None else 0
+    except (ValueError, TypeError):
+        return '--level-tier-iron'
+    if streak >= 1080:
+        return '--level-tier-lustrous'
+    elif streak >= 720:
+        return '--level-tier-radiant'
+    elif streak >= 360:
+        return '--level-tier-rhodium'
+    elif streak >= 180:
+        return '--level-tier-platinum'
+    elif streak >= 90:
+        return '--level-tier-gold'
+    elif streak >= 30:
+        return '--level-tier-silver'
+    elif streak >= 15:
+        return '--level-tier-bronze'
+    else:
+        return '--level-tier-iron'
+
+def update_streak(widget):
+    streak_value, use_alternative_template, new_last_update_time = get_daily_streak(
+        osu_client_id=widget.osu_client_id,
+        osu_client_secret=widget.osu_client_secret,
+        osu_username=widget.osu_username,
+        enable_logging=widget.enable_logging,
+        calculate_days_since_start=widget.calculate_days_since_start,
+        Ossapi=Ossapi,
+        last_update_time=widget.last_update_time
+    )
+    widget.use_alternative_template = use_alternative_template
+    widget.last_update_time = new_last_update_time
+    streak_colour_var = get_streak_colour_var(streak_value)
+    current_template = ALTERNATIVE_TEMPLATE if widget.use_alternative_template else DEFAULT_TEMPLATE
+    local_time = datetime.now().astimezone()
+    local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
+    html_content = current_template.format(
+        current_time=local_time_str,
+        current_user=widget.osu_username,
+        daily_streak=streak_value,
+        streak_colour_var=streak_colour_var
+    )
+    additional_style = """
+        * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+        ::selection {
+            background: transparent !important;
+        }
+    """
+    html_content = html_content.replace('</style>', additional_style + '</style>')
+    if hasattr(widget, 'webView'):
+        widget.webView.setHtml(html_content)
+        if widget.enable_logging:
+            print(f"[Widget] Streak value updated: {streak_value}")
+            print(f"[Widget] Using {'ALTERNATIVE' if widget.use_alternative_template else 'DEFAULT'} template")
+    widget.update_menu_time_action()

@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QCursor
 from context_menu_processing import SaveOnFocusOutLineEdit, NonClosingMenu
+from streak_utils import UPDATE_INTERVALS
 
 def createContextMenu(self):
     menu = NonClosingMenu(self)
@@ -137,7 +138,6 @@ def createContextMenu(self):
         loggingAction.setChecked(self.enable_logging)
         loggingAction.triggered.connect(self.toggle_logging)
         menu.addAction(loggingAction)
-
     menu.addSeparator()
     intervalWidget = QWidget()
     intervalLayout = QHBoxLayout(intervalWidget)
@@ -173,8 +173,7 @@ QComboBox QAbstractItemView::item {{
 """)
     intervalCombo.setFixedHeight(desired_height)
     intervalCombo.view().setStyleSheet(f"QListView::item{{height: {desired_height}px;}}")
-
-    for idx, (interval, label) in enumerate(self.UPDATE_INTERVALS):
+    for idx, (interval, label) in enumerate(UPDATE_INTERVALS):
         intervalCombo.addItem(label, interval)
         if interval == self.update_interval:
             intervalCombo.setCurrentIndex(idx)

@@ -5,23 +5,13 @@ from datetime import datetime, timezone
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings, QWebEngineProfile
-from widget_templates import DEFAULT_TEMPLATE, ALTERNATIVE_TEMPLATE
-from ossapi import Ossapi
 from autostart_utils import add_to_startup_registry, remove_from_startup_registry, is_in_startup_registry
 from context_menu_processing import NoSelectWebEngineView, MouseMoveMixin
-from streak_utils import get_daily_streak
-from context_menu import createContextMenu, mousePressEvent 
+from streak_utils import UPDATE_INTERVALS, get_streak_colour_var, update_streak
+from context_menu import createContextMenu, mousePressEvent
 from widget_keyevents import handle_key_press
 
-class TransparentWindow(QMainWindow, MouseMoveMixin):
-    UPDATE_INTERVALS = [
-        (5 * 60 * 1000, "5 minutes"),
-        (10 * 60 * 1000, "10 minutes"),
-        (15 * 60 * 1000, "15 minutes"),
-        (30 * 60 * 1000, "30 minutes"),
-        (60 * 60 * 1000, "60 minutes"),
-    ]
-
+class Widget(QMainWindow, MouseMoveMixin):
     def __init__(self):
         super().__init__()
         self.debug_border = False
@@ -69,7 +59,6 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
         self.osu_username = self.settings.get('osu_username', '')
 
         self.key_sequence = []
-        self.use_alternative_template = self.settings.get('use_alternative_template', False)
         self.always_on_top = self.settings.get('always_on_top', True)
         self.enable_logging = False if getattr(sys, 'frozen', False) else self.settings.get('enable_logging', False)
 
@@ -77,7 +66,7 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
         self.menu_time_action = None
         self.menu_time_timer = QTimer(self)
         self.menu_time_timer.setInterval(1000)
-        self.menu_time_timer.timeout.connect(self._update_menu_time_action)
+        self.menu_time_timer.timeout.connect(self.update_menu_time_action)
 
         if getattr(sys, 'frozen', False) and self.settings.get('autostart', True):
             add_to_startup_registry()
@@ -86,10 +75,10 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
         self.snap_distance = 10
         self.arrow_step = 2
         self.last_update_time = None
-        self.update_interval = self.settings.get('update_interval', TransparentWindow.UPDATE_INTERVALS[0][0])
+        self.update_interval = self.settings.get('update_interval', UPDATE_INTERVALS[0][0])
         self.initUI()
         self.update_timer = QTimer()
-        self.update_timer.timeout.connect(self._on_update_timer)
+        self.update_timer.timeout.connect(self.on_update_timer)
         self.restart_update_timer()
 
     def calculate_days_since_start(self):
@@ -97,74 +86,11 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
         date_only = now.strftime('%Y-%m-%d')
         return date_only
 
-    def get_streak_colour_var(self, streak_value):
-        try:
-            streak = int(str(streak_value).replace('d', '')) if streak_value is not None else 0
-        except (ValueError, TypeError):
-            return '--level-tier-iron'
-        if streak >= 1080:
-            return '--level-tier-lustrous'
-        elif streak >= 720:
-            return '--level-tier-radiant'
-        elif streak >= 360:
-            return '--level-tier-rhodium'
-        elif streak >= 180:
-            return '--level-tier-platinum'
-        elif streak >= 90:
-            return '--level-tier-gold'
-        elif streak >= 30:
-            return '--level-tier-silver'
-        elif streak >= 15:
-            return '--level-tier-bronze'
-        else:
-            return '--level-tier-iron'
-
-    def update_streak(self):
-        if self.enable_logging:
-            print("[Widget] Updating streak value...")
-        streak_value, self.use_alternative_template, self.last_update_time = get_daily_streak(
-            osu_client_id=self.osu_client_id,
-            osu_client_secret=self.osu_client_secret,
-            osu_username=self.osu_username,
-            enable_logging=self.enable_logging,
-            calculate_days_since_start=self.calculate_days_since_start,
-            Ossapi=Ossapi,
-            last_update_time=self.last_update_time
-        )
-        streak_colour_var = self.get_streak_colour_var(streak_value)
-        current_template = ALTERNATIVE_TEMPLATE if self.use_alternative_template else DEFAULT_TEMPLATE
-        local_time = datetime.now().astimezone()
-        local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
-        html_content = current_template.format(
-            current_time=local_time_str,
-            current_user=self.osu_username,
-            daily_streak=streak_value,
-            streak_colour_var=streak_colour_var
-        )
-        additional_style = """
-            * {
-                -webkit-user-select: none !important;
-                -moz-user-select: none !important;
-                -ms-user-select: none !important;
-                user-select: none !important;
-            }
-            ::selection {
-                background: transparent !important;
-            }
-        """
-        html_content = html_content.replace('</style>', additional_style + '</style>')
-        if hasattr(self, 'webView'):
-            self.webView.setHtml(html_content)
-            if self.enable_logging:
-                print(f"[Widget] Streak value updated: {streak_value}")
-                print(f"[Widget] Using {'ALTERNATIVE' if self.use_alternative_template else 'DEFAULT'} template")
-        self._update_menu_time_action()
-
-    def _on_update_timer(self):
+    def on_update_timer(self):
         self.update_streak()
         self.restart_update_timer()
 
-    def _update_menu_time_action(self):
+    def update_menu_time_action(self):
         if self.open_context_menu and self.menu_time_action:
             if self.last_update_time:
                 local_update_time = self.last_update_time.astimezone()
@@ -176,12 +102,10 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
     def load_settings(self):
         if self.enable_logging:
             print(f"[Settings] Attempting to load settings from: {self.settings_file} (File {'exists' if os.path.exists(self.settings_file) else 'does not exist'})")
-        
         if not os.path.exists(self.settings_file):
             if self.enable_logging:
                 print("[Settings] Settings file not found")
             return {}
-
         try:
             with open(self.settings_file, 'r', encoding='utf-8') as f:
                 try:
@@ -194,7 +118,6 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
             if self.enable_logging:
                 print(f"[Settings] Error reading settings file: {e}")
             return {}
-
         try:
             if 'position' in loaded_settings:
                 pos = loaded_settings['position']
@@ -218,7 +141,6 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
         except Exception as e:
             if self.enable_logging:
                 print(f"[Settings] Error processing scale data. Invalid value: '{loaded_settings.get('scale', None)}'. Expected an integer between 100 and 500. Error details: {e}")
-                print(f"[Settings] Error processing scale data '{loaded_settings.get('scale', None)}': {e}")
             loaded_settings['scale'] = 100
         if self.enable_logging:
             print(f"Settings loaded successfully: {loaded_settings}")
@@ -236,7 +158,6 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
             settings = {
                 'position': current_pos,
                 'scale': self.scale,
-                'use_alternative_template': self.use_alternative_template,
                 'always_on_top': self.always_on_top,
                 'enable_logging': self.enable_logging if not getattr(sys, 'frozen', False) else False,
                 'osu_client_id': self.osu_client_id,
@@ -296,14 +217,14 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
             self.save_settings()
 
     def set_update_interval(self, interval_ms):
-        self.update_interval = interval_ms  # <<<--- ОБЯЗАТЕЛЬНО! (Fix)
+        self.update_interval = interval_ms
         self.settings['update_interval'] = interval_ms
         self.save_settings()
 
         now = datetime.now(timezone.utc)
         if self.last_update_time is None:
             self.last_update_time = now
-        elapsed = (now - self.last_update_time).total_seconds() * 1000  
+        elapsed = (now - self.last_update_time).total_seconds() * 1000
         time_to_next = max(0, self.update_interval - elapsed)
 
         self.update_timer.stop()
@@ -314,7 +235,6 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
             self.update_timer.timeout.connect(restart_timer)
 
     def restart_update_timer(self, interval=None):
-        """Helper method to restart the update timer."""
         self.update_timer.stop()
         self.update_timer.start(interval if interval is not None else self.update_interval)
 
@@ -341,32 +261,8 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
         profile.setHttpCacheMaximumSize(0)
         self.webView.setFixedSize(current_width, current_height)
         self.webView.setGeometry(0, 0, current_width, current_height)
-        additional_style = """
-            * {
-                -webkit-user-select: none !important;
-                -moz-user-select: none !important;
-                -ms-user-select: none !important;
-                user-select: none !important;
-            }
-            ::selection {
-                background: transparent !important;
-            }
-        """
-        current_template = ALTERNATIVE_TEMPLATE if self.use_alternative_template else DEFAULT_TEMPLATE
-        local_time = datetime.now().astimezone()
-        local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
-        streak_value = "0d"
-        streak_colour_var = self.get_streak_colour_var(streak_value)
-        html_content = current_template.format(
-            current_time=local_time_str,
-            current_user=self.osu_username,
-            daily_streak=streak_value,
-            streak_colour_var=streak_colour_var
-        )
-        html_content = html_content.replace('</style>', additional_style + '</style>')
         self.webView.page().setBackgroundColor(Qt.transparent)
         self.webView.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.webView.setHtml(html_content)
         if self.scale != 100:
             self.webView.setZoomFactor(self.scale / 100)
         self.webView.show()
@@ -490,9 +386,12 @@ class TransparentWindow(QMainWindow, MouseMoveMixin):
             QApplication.instance().quit()
         event.accept()
 
+    def update_streak(self):
+        update_streak(self)
+
 if __name__ == '__main__':
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-logging --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage'
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
-    ex = TransparentWindow()
+    ex = Widget()
     sys.exit(app.exec_())
