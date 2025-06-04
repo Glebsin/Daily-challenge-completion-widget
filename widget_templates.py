@@ -1,10 +1,8 @@
 DEFAULT_TEMPLATE = """
 <!DOCTYPE html>
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   :root {{
-    --font-default: Torus, Inter, "Helvetica Neue", Tahoma, Arial, "Hiragino Kaku Gothic ProN", Meiryo, "Microsoft YaHei", "Apple SD Gothic Neo", sans-serif;
+    --font-default: Torus
   }}
 
   html, body {{
@@ -23,7 +21,6 @@ DEFAULT_TEMPLATE = """
     --forum-item-background-color-hover: hsl(var(--hsl-b3));
     --base-hue: var(--base-hue-override, var(--base-hue-default));
     --base-hue-deg: calc(var(--base-hue)*1deg);
-
     --level-tier-iron: #bab3ab,#bab3ab;
     --level-tier-bronze: #b88f7a,#855c47;
     --level-tier-silver: #e0e0eb,#a3a3c2;
@@ -105,7 +102,7 @@ DEFAULT_TEMPLATE = """
 
   .daily-challenge__value {{
     --colour: var({streak_colour_var});
-    background: linear-gradient(45deg, var(--colour));
+    background: linear-gradient(180deg, var(--colour));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -147,9 +144,9 @@ DEFAULT_TEMPLATE = """
 
 ALTERNATIVE_TEMPLATE = """
 <!DOCTYPE html>
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style>
+<style>
 :root {{
-    --font-default: Torus,Inter,"Helvetica Neue",Tahoma,Arial,"Hiragino Kaku Gothic ProN",Meiryo,"Microsoft YaHei","Apple SD Gothic Neo",sans-serif;
+    --font-default: Torus
 }}
 
 html, body {{
@@ -226,7 +223,8 @@ body {{
 .daily-challenge__value {{
     --colour: var({streak_colour_var});
     -webkit-background-clip: text;
-    background-image: linear-gradient(var(--colour));
+    background-image: linear-gradient(180deg, var(--colour));
+    background-clip: text;
     color: transparent;
     display: flex;
     justify-content: center;
