@@ -6,6 +6,8 @@ from PyQt5.QtGui import QCursor
 from context_menu_processing import SaveOnFocusOutLineEdit, NonClosingMenu
 from streak_utils import UPDATE_INTERVALS
 
+APP_VERSION = "2025.604.0"
+
 def createContextMenu(self):
     menu = NonClosingMenu(self)
     scaleWidget = QWidget()
@@ -204,8 +206,19 @@ QComboBox QAbstractItemView::item {{
         self.menu_time_timer.timeout.connect(self._update_menu_time_action)
     self.menu_time_timer.start()
     menu.addSeparator()
+
+    versionAction = QAction(f'Version: {APP_VERSION}', self)
+    versionAction.setEnabled(True) 
+    def copy_version_to_clipboard():
+        QApplication.clipboard().setText(APP_VERSION)
+    versionAction.triggered.connect(copy_version_to_clipboard)
+    versionAction.setToolTip("Click to copy version to clipboard")
+    menu.addAction(versionAction)
+
+    menu.addSeparator()
     exitAction = menu.addAction('Exit')
     exitAction.triggered.connect(self.closeApp)
+
     menu.setStyleSheet("""
         QMenu {
             background-color: #2D2D2D;
