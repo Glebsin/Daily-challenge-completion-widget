@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from ossapi import Ossapi
 from widget_templates import DEFAULT_TEMPLATE, ALTERNATIVE_TEMPLATE
+from saveload_settings_utils import save_settings as utils_save_settings
 
 UPDATE_INTERVALS = [
     (5 * 60 * 1000, "5 minutes"),
@@ -9,6 +10,11 @@ UPDATE_INTERVALS = [
     (30 * 60 * 1000, "30 minutes"),
     (60 * 60 * 1000, "60 minutes"),
 ]
+
+def calculate_days_since_start():
+    now = datetime.now(timezone.utc)
+    date_only = now.strftime('%Y-%m-%d')
+    return date_only
 
 def get_daily_streak(
     osu_client_id,
@@ -96,7 +102,7 @@ def update_streak(widget):
         osu_client_secret=widget.osu_client_secret,
         osu_username=widget.osu_username,
         enable_logging=widget.enable_logging,
-        calculate_days_since_start=widget.calculate_days_since_start,
+        calculate_days_since_start=calculate_days_since_start,
         Ossapi=Ossapi,
         last_update_time=widget.last_update_time
     )
@@ -130,3 +136,33 @@ def update_streak(widget):
             print(f"[Widget] Streak value updated: {streak_value}")
             print(f"[Widget] Using {'ALTERNATIVE' if widget.use_alternative_template else 'DEFAULT'} template")
     widget.update_menu_time_action()
+
+def update_osu_settings(widget, client_id=None, client_secret=None, username=None):
+    settings_changed = False
+    updated = False
+
+    if client_id is not None and client_id != widget.osu_client_id:
+        widget.osu_client_id = client_id
+        settings_changed = True
+        updated = True
+    if client_secret is not None and client_secret != widget.osu_client_secret:
+        widget.osu_client_secret = client_secret
+        settings_changed = True
+        updated = True
+    if username is not None and username != widget.osu_username:
+        widget.osu_username = username
+        settings_changed = True
+        updated = True
+
+    if widget.osu_client_id and widget.osu_client_secret and widget.osu_username and updated:
+        if widget.enable_logging:
+            print("[osu!api] Credentials updated, calling update_streak")
+        widget.update_streak()
+
+    if settings_changed:
+        current_pos = {
+            'x': int(widget.geometry().x()),
+            'y': int(widget.geometry().y())
+        }
+        widget.settings['position'] = current_pos
+        widget.save_settings()

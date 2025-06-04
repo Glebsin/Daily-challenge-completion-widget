@@ -102,7 +102,7 @@ DEFAULT_TEMPLATE = """
 
   .daily-challenge__value {{
     --colour: var({streak_colour_var});
-    background: linear-gradient(45deg, var(--colour));
+    background: linear-gradient(180deg, var(--colour));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -223,7 +223,8 @@ body {{
 .daily-challenge__value {{
     --colour: var({streak_colour_var});
     -webkit-background-clip: text;
-    background-image: linear-gradient(var(--colour));
+    background-image: linear-gradient(180deg, var(--colour));
+    background-clip: text;
     color: transparent;
     display: flex;
     justify-content: center;

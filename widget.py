@@ -1,5 +1,4 @@
 import sys
-import json
 import os
 from datetime import datetime, timezone
 from PyQt5.QtWidgets import QApplication, QMainWindow
@@ -7,9 +6,10 @@ from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings, QWebEngineProfile
 from autostart_utils import add_to_startup_registry, remove_from_startup_registry, is_in_startup_registry
 from context_menu_processing import NoSelectWebEngineView, MouseMoveMixin
-from streak_utils import UPDATE_INTERVALS, update_streak
+from streak_utils import UPDATE_INTERVALS, update_streak, update_osu_settings
 from context_menu import createContextMenu, mousePressEvent
 from widget_keyevents import handle_key_press
+from saveload_settings_utils import load_settings, save_settings as utils_save_settings
 
 class Widget(QMainWindow, MouseMoveMixin):
     def __init__(self):
@@ -22,7 +22,7 @@ class Widget(QMainWindow, MouseMoveMixin):
         else:
             self.settings_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widget_settings.json")
 
-        self.settings = self.load_settings()
+        self.settings = load_settings(self.settings_file, self.enable_logging)
         self.scale = self.settings.get('scale', 100)
         self.base_width = 160
         self.base_height = 57
@@ -81,15 +81,6 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.update_timer.timeout.connect(self.on_update_timer)
         self.restart_update_timer()
 
-    def calculate_days_since_start(self):
-        now = datetime.now(timezone.utc)
-        date_only = now.strftime('%Y-%m-%d')
-        return date_only
-
-    def on_update_timer(self):
-        self.update_streak()
-        self.restart_update_timer()
-
     def update_menu_time_action(self):
         if self.open_context_menu and self.menu_time_action:
             if self.last_update_time:
@@ -99,122 +90,23 @@ class Widget(QMainWindow, MouseMoveMixin):
                 update_str = "-"
             self.menu_time_action.setText(f'Updated: {update_str}')
 
-    def load_settings(self):
-        if self.enable_logging:
-            print(f"[Settings] Attempting to load settings from: {self.settings_file} (File {'exists' if os.path.exists(self.settings_file) else 'does not exist'})")
-        if not os.path.exists(self.settings_file):
-            if self.enable_logging:
-                print("[Settings] Settings file not found")
-            return {}
-        try:
-            with open(self.settings_file, 'r', encoding='utf-8') as f:
-                try:
-                    loaded_settings = json.load(f)
-                except json.JSONDecodeError as json_error:
-                    if self.enable_logging:
-                        print(f"[Settings] JSON decoding error: {json_error}")
-                    return {}
-        except Exception as e:
-            if self.enable_logging:
-                print(f"[Settings] Error reading settings file: {e}")
-            return {}
-        try:
-            if 'position' in loaded_settings:
-                pos = loaded_settings['position']
-                if not isinstance(pos, dict) or 'x' not in pos or 'y' not in pos:
-                    if self.enable_logging:
-                        print("[Settings] Invalid position format in settings")
-                    loaded_settings.pop('position')
-                else:
-                    loaded_settings['position'] = {
-                        'x': int(pos['x']),
-                        'y': int(pos['y'])
-                    }
-            if 'scale' in loaded_settings:
-                scale = int(loaded_settings['scale'])
-                if scale < 100 or scale > 500:
-                    if self.enable_logging:
-                        print(f"[Settings] Invalid scale value '{loaded_settings.get('scale', None)}', resetting to 100")
-                    loaded_settings['scale'] = 100
-                else:
-                    loaded_settings['scale'] = scale
-        except Exception as e:
-            if self.enable_logging:
-                print(f"[Settings] Error processing scale data. Invalid value: '{loaded_settings.get('scale', None)}'. Expected an integer between 100 and 500. Error details: {e}")
-            loaded_settings['scale'] = 100
-        if self.enable_logging:
-            print(f"Settings loaded successfully: {loaded_settings}")
-        return loaded_settings
-
     def save_settings(self):
-        try:
-            settings_dir = os.path.dirname(self.settings_file)
-            if not os.path.exists(settings_dir):
-                os.makedirs(settings_dir)
-            current_pos = {
-                'x': int(self.geometry().x()),
-                'y': int(self.geometry().y())
-            }
-            settings = {
-                'position': current_pos,
-                'scale': self.scale,
-                'always_on_top': self.always_on_top,
-                'enable_logging': self.enable_logging if not getattr(sys, 'frozen', False) else False,
-                'osu_client_id': self.osu_client_id,
-                'osu_client_secret': self.osu_client_secret,
-                'osu_username': self.osu_username,
-                'autostart': is_in_startup_registry() if getattr(sys, 'frozen', False) else False,
-                'update_interval': self.update_interval,
-            }
-            temp_file = self.settings_file + '.tmp'
-            with open(temp_file, 'w', encoding='utf-8') as f:
-                json.dump(settings, f, indent=2)
-                f.flush()
-                os.fsync(f.fileno())
-            if sys.platform == 'win32':
-                if os.path.exists(self.settings_file):
-                    os.replace(temp_file, self.settings_file)
-                else:
-                    os.rename(temp_file, self.settings_file)
-        except Exception as e:
-            if self.enable_logging:
-                print(f"[Settings] Error saving settings: {e}")
-            try:
-                with open(self.settings_file, 'w', encoding='utf-8') as f:
-                    json.dump(settings, f)
-            except Exception as e:
-                if self.enable_logging:
-                    print(f"[Settings] Fatal error saving settings: {e}")
-
-    def update_osu_settings(self, client_id=None, client_secret=None, username=None):
-        settings_changed = False
-        updated = False
-
-        if client_id is not None and client_id != self.osu_client_id:
-            self.osu_client_id = client_id
-            settings_changed = True
-            updated = True
-        if client_secret is not None and client_secret != self.osu_client_secret:
-            self.osu_client_secret = client_secret
-            settings_changed = True
-            updated = True
-        if username is not None and username != self.osu_username:
-            self.osu_username = username
-            settings_changed = True
-            updated = True
-
-        if self.osu_client_id and self.osu_client_secret and self.osu_username and updated:
-            if self.enable_logging:
-                print("[osu!api] Credentials updated, calling update_streak")
-            self.update_streak()
-
-        if settings_changed:
-            current_pos = {
-                'x': int(self.geometry().x()),
-                'y': int(self.geometry().y())
-            }
-            self.settings['position'] = current_pos
-            self.save_settings()
+        current_pos = {
+            'x': int(self.geometry().x()),
+            'y': int(self.geometry().y())
+        }
+        settings = {
+            'position': current_pos,
+            'scale': self.scale,
+            'always_on_top': self.always_on_top,
+            'enable_logging': self.enable_logging if not getattr(sys, 'frozen', False) else False,
+            'osu_client_id': self.osu_client_id,
+            'osu_client_secret': self.osu_client_secret,
+            'osu_username': self.osu_username,
+            'autostart': is_in_startup_registry() if getattr(sys, 'frozen', False) else False,
+            'update_interval': self.update_interval,
+        }
+        utils_save_settings(self.settings_file, settings, self.enable_logging)
 
     def set_update_interval(self, interval_ms):
         self.update_interval = interval_ms
@@ -388,6 +280,13 @@ class Widget(QMainWindow, MouseMoveMixin):
 
     def update_streak(self):
         update_streak(self)
+
+    def on_update_timer(self):
+        self.update_streak()
+        self.restart_update_timer()
+
+    def update_osu_settings(self, client_id=None, client_secret=None, username=None):
+        update_osu_settings(self, client_id, client_secret, username)
 
 if __name__ == '__main__':
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-logging --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage'
