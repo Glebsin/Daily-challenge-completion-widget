@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings, QWebEngineProfile
 from autostart_utils import add_to_startup_registry, remove_from_startup_registry, is_in_startup_registry
 from context_menu_processing import NoSelectWebEngineView, MouseMoveMixin
-from streak_utils import UPDATE_INTERVALS, get_streak_colour_var, update_streak
+from streak_utils import UPDATE_INTERVALS, update_streak
 from context_menu import createContextMenu, mousePressEvent
 from widget_keyevents import handle_key_press
 
@@ -356,15 +356,6 @@ class Widget(QMainWindow, MouseMoveMixin):
             print(f"[Widget] Debug border {'enabled' if self.debug_border else 'disabled'}")
         self.updateWindowStyle()
 
-    def createContextMenu(self):
-        createContextMenu(self)
-
-    def mousePressEvent(self, event):
-        mousePressEvent(self, event)
-
-    def keyPressEvent(self, event):
-        handle_key_press(self, event)
-
     def closeApp(self):
         current_pos = {
             'x': int(self.geometry().x()),
@@ -385,6 +376,15 @@ class Widget(QMainWindow, MouseMoveMixin):
         except SystemExit:
             QApplication.instance().quit()
         event.accept()
+
+    def createContextMenu(self):
+        createContextMenu(self)
+
+    def mousePressEvent(self, event):
+        mousePressEvent(self, event)
+
+    def keyPressEvent(self, event):
+        handle_key_press(self, event)
 
     def update_streak(self):
         update_streak(self)
