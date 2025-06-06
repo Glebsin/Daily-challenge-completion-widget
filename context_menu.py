@@ -6,7 +6,7 @@ from PyQt5.QtGui import QCursor
 from context_menu_processing import SaveOnFocusOutLineEdit, NonClosingMenu
 from streak_utils import UPDATE_INTERVALS
 
-APP_VERSION = "2025.604.0"
+APP_VERSION = "2025.606.0"
 
 def createContextMenu(self):
     menu = NonClosingMenu(self)
