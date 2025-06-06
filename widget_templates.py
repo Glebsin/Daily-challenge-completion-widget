@@ -165,7 +165,6 @@ body {{
     --forum-item-background-color-hover: hsl(var(--hsl-b3));
     --base-hue: var(--base-hue-override,var(--base-hue-default));
     --base-hue-deg: calc(var(--base-hue)*1deg);
-
     --level-tier-iron: #bab3ab,#bab3ab;
     --level-tier-bronze: #b88f7a,#855c47;
     --level-tier-silver: #e0e0eb,#a3a3c2;

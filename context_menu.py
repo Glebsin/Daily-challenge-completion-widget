@@ -236,6 +236,9 @@ QComboBox QAbstractItemView::item {{
         QMenu::item:disabled {
             color: #808080;
         }
+        QMenu::item:disabled:selected {
+            background-color: transparent;
+        }
         QMenu::indicator {
             width: 15px;
             height: 15px;
