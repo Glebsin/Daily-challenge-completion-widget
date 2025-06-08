@@ -1,7 +1,8 @@
 import sys
 import os
 from datetime import datetime, timezone
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu, QAction
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings, QWebEngineProfile
 from autostart_utils import add_to_startup_registry, remove_from_startup_registry, is_in_startup_registry
@@ -68,6 +69,12 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.menu_time_timer.setInterval(1000)
         self.menu_time_timer.timeout.connect(self.update_menu_time_action)
 
+        # For tray update time
+        self.tray_time_action = None
+        self.tray_time_timer = QTimer(self)
+        self.tray_time_timer.setInterval(1000)
+        self.tray_time_timer.timeout.connect(self.update_tray_time_action)
+
         if getattr(sys, 'frozen', False) and self.settings.get('autostart', True):
             add_to_startup_registry()
 
@@ -76,10 +83,126 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.arrow_step = 2
         self.last_update_time = None
         self.update_interval = self.settings.get('update_interval', UPDATE_INTERVALS[0][0])
+
+        self.tray_icon = None
+        self.tray_menu = None  # Store tray menu to recreate it dynamically
+        self.init_tray_icon()
+
         self.initUI()
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.on_update_timer)
         self.restart_update_timer()
+
+    def init_tray_icon(self):
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'DCCW.ico')
+        icon = QIcon(icon_path)
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(icon)
+        self.tray_icon.setToolTip("DCCW")
+        self.update_tray_menu()
+        self.tray_icon.activated.connect(self.on_tray_icon_activated)
+        self.tray_icon.show()
+
+    def update_tray_menu(self):
+        tray_menu = QMenu()
+        tray_menu.setStyleSheet("""
+            QMenu {
+                background-color: #2D2D2D;
+                color: white;
+                border: 1px solid #3D3D3D;
+                padding: 5px;
+            }
+            QMenu::item {
+                background-color: transparent;
+                padding: 5px 20px;
+            }
+            QMenu::item:selected {
+                background-color: #3D3D3D;
+            }
+            QMenu::item:disabled {
+                color: #808080;
+            }
+            QMenu::item:disabled:selected {
+                background-color: transparent;
+            }
+            QMenu::indicator {
+                width: 15px;
+                height: 15px;
+            }
+            QMenu::indicator:checked {
+                background: #4CAF50;
+            }
+            QLabel {
+                color: white;
+                padding: 2px 0;
+            }
+            QWidget {
+                background-color: #2D2D2D;
+            }
+        """)
+
+        # Show only if always_on_top is False
+        if not self.always_on_top:
+            show_action = QAction("Show", self)
+            show_action.triggered.connect(self.show_from_tray)
+            tray_menu.addAction(show_action)
+
+        # --- Add update time field like in context menu ---
+        if self.last_update_time:
+            local_update_time = self.last_update_time.astimezone()
+            update_str = local_update_time.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            update_str = "-"
+        tray_time_action = QAction(f'Updated: {update_str}', self)
+        tray_time_action.setEnabled(False)
+        tray_menu.addAction(tray_time_action)
+        self.tray_time_action = tray_time_action
+        self.tray_time_timer.start()
+        # --- end of block ---
+
+        quit_action = QAction("Quit", self)
+        quit_action.triggered.connect(QApplication.instance().quit)
+        tray_menu.addAction(quit_action)
+
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_menu = tray_menu
+
+    def update_tray_time_action(self):
+        if self.tray_time_action:
+            if self.last_update_time:
+                local_update_time = self.last_update_time.astimezone()
+                update_str = local_update_time.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                update_str = "-"
+            self.tray_time_action.setText(f'Updated: {update_str}')
+
+    def show_from_tray(self):
+        # Show the window and bring it to the front, if not always on top
+        if not self.always_on_top:
+            self.showNormal()
+            self.activateWindow()
+            self.raise_()
+
+    def toggle_always_on_top(self):
+        self.always_on_top = not self.always_on_top
+        flags = Qt.FramelessWindowHint | Qt.Tool
+        if self.always_on_top:
+            flags |= Qt.WindowStaysOnTopHint
+        self.setWindowFlags(flags)
+        current_pos = self.pos()
+        self.show()
+        self.move(current_pos)
+        self.save_settings()
+        self.update_tray_menu()  # Update tray menu when always_on_top changes
+
+    def on_tray_icon_activated(self, reason):
+        if reason == QSystemTrayIcon.Trigger:
+            if self.isVisible():
+                self.hide()
+            else:
+                # Only show window if allowed (always_on_top is False)
+                if not self.always_on_top:
+                    self.show_from_tray()
 
     def update_menu_time_action(self):
         if self.open_context_menu and self.menu_time_action:
@@ -173,17 +296,6 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.update()
         QApplication.processEvents()
 
-    def toggle_always_on_top(self):
-        self.always_on_top = not self.always_on_top
-        flags = Qt.FramelessWindowHint | Qt.Tool
-        if self.always_on_top:
-            flags |= Qt.WindowStaysOnTopHint
-        self.setWindowFlags(flags)
-        current_pos = self.pos()
-        self.show()
-        self.move(current_pos)
-        self.save_settings()
-
     def toggle_autostart(self):
         if is_in_startup_registry():
             success = remove_from_startup_registry()
@@ -260,6 +372,7 @@ class Widget(QMainWindow, MouseMoveMixin):
             self.webView.setHtml("")
             self.webView.close()
             self.webView.deleteLater()
+        self.tray_time_timer.stop()
         QApplication.instance().quit()
 
     def closeEvent(self, event):

@@ -231,6 +231,7 @@ def createContextMenu(self):
     menu.addSeparator()
     manualUpdateAction = QAction('Manual Update', self)
     manualUpdateAction.setToolTip("Click to manually refresh the widget (same as F5)")
+    manualUpdateAction.triggered.connect(self.update_streak)
     menu.addAction(manualUpdateAction)
     menu.addSeparator()
     alwaysOnTopAction = QAction('Always on Top', self)
@@ -328,7 +329,7 @@ QComboBox QAbstractItemView::item {{
     versionAction.triggered.connect(copy_version_to_clipboard)
     menu.addAction(versionAction)
     menu.addSeparator()
-    exitAction = menu.addAction('Exit')
+    exitAction = menu.addAction('Quit')
     exitAction.triggered.connect(self.closeApp)
     menu.setStyleSheet("""
         QMenu {
