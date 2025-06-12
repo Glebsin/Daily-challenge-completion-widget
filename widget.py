@@ -1,16 +1,17 @@
 import sys
 import os
 from datetime import datetime, timezone
-from PyQt5.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu, QAction
+from PyQt5.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu, QAction, QDesktopWidget
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer
-from PyQt5.QtWebEngineWidgets import QWebEngineSettings, QWebEngineProfile
+from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer, QPoint
+from PyQt5.QtWebEngineWidgets import QWebEngineSettings, QWebEngineProfile, QWebEngineView
 from autostart_utils import add_to_startup_registry, remove_from_startup_registry, is_in_startup_registry
 from context_menu_processing import NoSelectWebEngineView, MouseMoveMixin
 from streak_utils import UPDATE_INTERVALS, update_streak, update_osu_settings
 from context_menu import createContextMenu, mousePressEvent
 from widget_keyevents import handle_key_press
 from saveload_settings_utils import load_settings, save_settings as utils_save_settings
+from popup_template import HTML_POPUP_TEMPLATE
 
 class Widget(QMainWindow, MouseMoveMixin):
     def __init__(self):
@@ -69,7 +70,6 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.menu_time_timer.setInterval(1000)
         self.menu_time_timer.timeout.connect(self.update_menu_time_action)
 
-        # For tray update time
         self.tray_time_action = None
         self.tray_time_timer = QTimer(self)
         self.tray_time_timer.setInterval(1000)
@@ -85,8 +85,10 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.update_interval = self.settings.get('update_interval', UPDATE_INTERVALS[0][0])
 
         self.tray_icon = None
-        self.tray_menu = None  # Store tray menu to recreate it dynamically
+        self.tray_menu = None
         self.init_tray_icon()
+
+        self.popup = None
 
         self.initUI()
         self.update_timer = QTimer()
@@ -141,13 +143,11 @@ class Widget(QMainWindow, MouseMoveMixin):
             }
         """)
 
-        # Show only if always_on_top is False
         if not self.always_on_top:
             show_action = QAction("Show", self)
             show_action.triggered.connect(self.show_from_tray)
             tray_menu.addAction(show_action)
 
-        # --- Add update time field like in context menu ---
         if self.last_update_time:
             local_update_time = self.last_update_time.astimezone()
             update_str = local_update_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -158,7 +158,6 @@ class Widget(QMainWindow, MouseMoveMixin):
         tray_menu.addAction(tray_time_action)
         self.tray_time_action = tray_time_action
         self.tray_time_timer.start()
-        # --- end of block ---
 
         quit_action = QAction("Quit", self)
         quit_action.triggered.connect(QApplication.instance().quit)
@@ -177,7 +176,6 @@ class Widget(QMainWindow, MouseMoveMixin):
             self.tray_time_action.setText(f'Updated: {update_str}')
 
     def show_from_tray(self):
-        # Show the window and bring it to the front, if not always on top
         if not self.always_on_top:
             self.showNormal()
             self.activateWindow()
@@ -193,14 +191,13 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.show()
         self.move(current_pos)
         self.save_settings()
-        self.update_tray_menu()  # Update tray menu when always_on_top changes
+        self.update_tray_menu()
 
     def on_tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
             if self.isVisible():
                 self.hide()
             else:
-                # Only show window if allowed (always_on_top is False)
                 if not self.always_on_top:
                     self.show_from_tray()
 
@@ -372,6 +369,10 @@ class Widget(QMainWindow, MouseMoveMixin):
             self.webView.setHtml("")
             self.webView.close()
             self.webView.deleteLater()
+        if self.popup:
+            self.popup.close()
+            self.popup.deleteLater()
+            self.popup = None
         self.tray_time_timer.stop()
         QApplication.instance().quit()
 
@@ -400,6 +401,78 @@ class Widget(QMainWindow, MouseMoveMixin):
 
     def update_osu_settings(self, client_id=None, client_secret=None, username=None):
         update_osu_settings(self, client_id, client_secret, username)
+
+    def enterEvent(self, event):
+        super().enterEvent(event)
+        self.show_popup()
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+        self.hide_popup()
+
+    def show_popup(self):
+        popup_width = 420
+        popup_height = 310
+        widget_geo = self.geometry()
+        global_widget_pos = self.mapToGlobal(QPoint(0, 0))
+        widget_rect = QRect(global_widget_pos, self.size())
+
+        target_screen = None
+        for screen in QApplication.screens():
+            if screen.geometry().contains(widget_rect.center()):
+                target_screen = screen
+                break
+        if target_screen is None:
+            target_screen = QApplication.primaryScreen()
+        desktop = target_screen.availableGeometry()
+
+        below_space = desktop.bottom() - widget_rect.bottom()
+        above_space = widget_rect.top() - desktop.top()
+        right_space = desktop.right() - widget_rect.right()
+        left_space = widget_rect.left() - desktop.left()
+
+        if below_space >= popup_height:
+            x = widget_rect.left() + (widget_rect.width() - popup_width) // 2
+            x = max(desktop.left(), min(x, desktop.right() - popup_width))
+            y = widget_rect.bottom()
+            popup_pos = QPoint(x, y)
+        elif above_space >= popup_height:
+            x = widget_rect.left() + (widget_rect.width() - popup_width) // 2
+            x = max(desktop.left(), min(x, desktop.right() - popup_width))
+            y = widget_rect.top() - popup_height
+            popup_pos = QPoint(x, y)
+        elif right_space >= popup_width:
+            x = widget_rect.right()
+            y = widget_rect.top() + (widget_rect.height() - popup_height) // 2
+            y = max(desktop.top(), min(y, desktop.bottom() - popup_height))
+            popup_pos = QPoint(x, y)
+        elif left_space >= popup_width:
+            x = widget_rect.left() - popup_width
+            y = widget_rect.top() + (widget_rect.height() - popup_height) // 2
+            y = max(desktop.top(), min(y, desktop.bottom() - popup_height))
+            popup_pos = QPoint(x, y)
+        else:
+            popup_pos = QPoint(desktop.left(), desktop.top())
+
+        if self.popup is None:
+            self.popup = QWebEngineView(None)
+            self.popup.setWindowFlags(Qt.FramelessWindowHint | Qt.ToolTip)
+            self.popup.setAttribute(Qt.WA_TranslucentBackground, True)
+            self.popup.setAttribute(Qt.WA_ShowWithoutActivating)
+            self.popup.setStyleSheet("background: transparent; border: none;")
+            self.popup.setFixedSize(popup_width, popup_height)
+            self.popup.page().setBackgroundColor(Qt.transparent)
+            self.popup.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        else:
+            self.popup.setFixedSize(popup_width, popup_height)
+        self.popup.setHtml(HTML_POPUP_TEMPLATE)
+        self.popup.move(popup_pos)
+        self.popup.show()
+        self.popup.raise_()
+
+    def hide_popup(self):
+        if self.popup is not None:
+            self.popup.hide()
 
 if __name__ == '__main__':
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-logging --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage'
