@@ -2,7 +2,7 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
 <html>
   <head>
     <style>
-      html, body {
+      html, body {{
         overflow: hidden !important;
         scrollbar-width: none !important;
         -ms-overflow-style: none !important;
@@ -10,28 +10,28 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
         height: 100%;
         margin: 0;
         padding: 0;
-      }
-      body::-webkit-scrollbar, html::-webkit-scrollbar {
+      }}
+      body::-webkit-scrollbar, html::-webkit-scrollbar {{
         display: none !important;
         width: 0 !important;
         background: transparent !important;
-      }
-      .qtip {
+      }}
+      .qtip {{
         box-shadow: none;
         direction: ltr;
         font-size: 10.5px;
         padding: 0;
         position: absolute
-      }
+      }}
 
-      :root {
+      :root {{
         --font-default: Torus;
         --navbar-height: 50px;
         --scroll-padding-top: calc(var(--navbar-height) + 1em + var(--scroll-padding-top-extra, 0px));
         --page-gutter: 10px
-      }
+      }}
 
-      body {
+      body {{
         --base-hue: var(--base-hue-override, var(--base-hue-default));
         --base-hue-deg: calc(var(--base-hue)*1deg);
         --level-tier-iron: #bab3ab, #bab3ab;
@@ -43,70 +43,70 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
         --level-tier-radiant: #97dcff, #ed82ff;
         --level-tier-lustrous: #ffe600, #ed82ff;
         font-family: var(--font-default-override, var(--font-default))
-      }
+      }}
 
-      .daily-challenge-popup {
+      .daily-challenge-popup {{
         background: hsl(var(--hsl-b4));
         border-radius: 20px;
         font-size: 12px
-      }
+      }}
 
-      .daily-challenge-popup__content {
+      .daily-challenge-popup__content {{
         display: grid;
         gap: 10px;
         padding: 15px
-      }
+      }}
 
-      .daily-challenge-popup__content--main {
+      .daily-challenge-popup__content--main {{
         grid-template-columns: 1fr auto
-      }
+      }}
 
-      .daily-challenge-popup__content--top {
+      .daily-challenge-popup__content--top {{
         background: hsl(var(--hsl-b5));
         border-top-left-radius: inherit;
         border-top-right-radius: inherit;
         display: grid;
         grid-template-columns: 1fr 1fr 1fr
-      }
+      }}
 
-      .daily-challenge-popup__row {
+      .daily-challenge-popup__row {{
         display: contents
-      }
+      }}
 
-      .daily-challenge-popup__value {
+      .daily-challenge-popup__value {{
         --colour: hsl(var(--hsl-c2));
         color: hsl(var(--hsl-c2))
-      }
+      }}
 
-      .daily-challenge-popup__value--fancy {
+      .daily-challenge-popup__value--fancy {{
         -webkit-background-clip: text;
         background-clip: text;
         background-image: linear-gradient(var(--colour));
         color: transparent
-      }
+      }}
 
-      .daily-challenge-popup__value--top {
+      .daily-challenge-popup__value--top {{
         font-size: 40px;
         font-weight: 300
-      }
+      }}
 
-      .qtip {
+      .qtip {{
         color: hsl(var(--hsl-c1))
-      }
+      }}
 
-      .qtip--daily-challenge {
+      .qtip--daily-challenge {{
         background: transparent;
         border: none;
         line-height: normal;
         max-width: none;
         min-width: 300px
-      }
+      }}
 
-      .qtip--daily-challenge .qtip-content {
+      .qtip--daily-challenge .qtip-content {{
         padding: 0 0 5px
-      }
+      }}
 
-      body {
+      body {{
         --hsl-p: var(--base-hue), 100%, 50%;
         --hsl-h1: var(--base-hue), 100%, 70%;
         --hsl-h2: var(--base-hue), 50%, 45%;
@@ -177,7 +177,7 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
         --hsl-darkorange-2: var(--colour-darkorange-hue), var(--c-saturation-2), var(--c-lightness-2);
         --hsl-darkorange-3: var(--colour-darkorange-hue), var(--c-saturation-3), var(--c-lightness-3);
         --hsl-darkorange-4: var(--colour-darkorange-hue), var(--c-saturation-4), var(--c-lightness-4)
-      }
+      }}
     </style>
   </head>
   <body class="t-section osu-layout osu-layout--body osu-layout--body-lazer js-animate-nav" style="--base-hue-default:333;--base-hue-override:333">
@@ -188,33 +188,33 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
           <div class="daily-challenge-popup__content daily-challenge-popup__content--top">
             <div class="daily-challenge-popup__top-entry">
               <div class="daily-challenge-popup__top-title">Total Participation</div>
-              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy daily-challenge-popup__value--top" style="--colour:var(--level-tier-platinum)">322d</div>
+              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy daily-challenge-popup__value--top" style="--colour:var(--level-tier-platinum)">{streak_value}</div>
             </div>
             <div class="daily-challenge-popup__top-entry">
               <div class="daily-challenge-popup__top-title">Current Daily Streak</div>
-              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy daily-challenge-popup__value--top" style="--colour:var(--level-tier-radiant)">322d</div>
+              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy daily-challenge-popup__value--top" style="--colour:var(--level-tier-radiant)">{daily_streak_current}</div>
             </div>
             <div class="daily-challenge-popup__top-entry">
               <div class="daily-challenge-popup__top-title">Current Weekly Streak</div>
-              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy daily-challenge-popup__value--top" style="--colour:var(--level-tier-radiant)">46w</div>
+              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy daily-challenge-popup__value--top" style="--colour:var(--level-tier-radiant)">{weekly_streak_current}</div>
             </div>
           </div>
           <div class="daily-challenge-popup__content daily-challenge-popup__content--main">
             <div class="daily-challenge-popup__row">
               <div class="daily-challenge-popup__key">Best Daily Streak</div>
-              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy" style="--colour:var(--level-tier-radiant)">322d</div>
+              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy" style="--colour:var(--level-tier-radiant)">{daily_streak_best}</div>
             </div>
             <div class="daily-challenge-popup__row">
               <div class="daily-challenge-popup__key">Best Weekly Streak</div>
-              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy daily-challenge-popup__value--weekly" style="--colour:var(--level-tier-radiant)">46w</div>
+              <div class="daily-challenge-popup__value daily-challenge-popup__value--fancy daily-challenge-popup__value--weekly" style="--colour:var(--level-tier-radiant)">{weekly_streak_best}</div>
             </div>
             <div class="daily-challenge-popup__row">
               <div class="daily-challenge-popup__key">Top 10% Placements</div>
-              <div class="daily-challenge-popup__value">23</div>
+              <div class="daily-challenge-popup__value">{top_10p_placements}</div>
             </div>
             <div class="daily-challenge-popup__row">
               <div class="daily-challenge-popup__key">Top 50% Placements</div>
-              <div class="daily-challenge-popup__value">129</div>
+              <div class="daily-challenge-popup__value">{top_50p_placements}</div>
             </div>
           </div>
         </div>
