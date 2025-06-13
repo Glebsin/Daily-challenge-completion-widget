@@ -2,6 +2,20 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
 <html>
   <head>
     <style>
+      html, body {
+        overflow: hidden !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body::-webkit-scrollbar, html::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        background: transparent !important;
+      }
       .qtip {
         box-shadow: none;
         direction: ltr;
