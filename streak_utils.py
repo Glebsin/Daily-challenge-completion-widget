@@ -108,6 +108,54 @@ def get_streak_colour_var(streak_value):
     else:
         return '--level-tier-iron'
 
+def get_daily_streak_current_colour_var(daily_streak_current):
+    try:
+        streak = int(str(daily_streak_current).replace('d', '')) if daily_streak_current is not None else 0
+    except (ValueError, TypeError):
+        return '--level-tier-iron'
+    if 0 <= streak <= 4:
+        return '--level-tier-iron'
+    elif 5 <= streak <= 9:
+        return '--level-tier-bronze'
+    elif 10 <= streak <= 29:
+        return '--level-tier-silver'
+    elif 30 <= streak <= 59:
+        return '--level-tier-gold'
+    elif 60 <= streak <= 119:
+        return '--level-tier-platinum'
+    elif 120 <= streak <= 239:
+        return '--level-tier-rhodium'
+    elif 240 <= streak <= 359:
+        return '--level-tier-radiant'
+    elif streak >= 360:
+        return '--level-tier-lustrous'
+    else:
+        return '--level-tier-iron'
+
+def get_weekly_streak_current_colour_var(weekly_streak_current):
+    try:
+        streak = int(str(weekly_streak_current).replace('w', '')) if weekly_streak_current is not None else 0
+    except (ValueError, TypeError):
+        return '--level-tier-iron'
+    if streak == 0:
+        return '--level-tier-iron'
+    elif streak == 1:
+        return '--level-tier-bronze'
+    elif 2 <= streak <= 4:
+        return '--level-tier-silver'
+    elif 5 <= streak <= 8:
+        return '--level-tier-gold'
+    elif 9 <= streak <= 17:
+        return '--level-tier-platinum'
+    elif 18 <= streak <= 34:
+        return '--level-tier-rhodium'
+    elif 35 <= streak <= 51:
+        return '--level-tier-radiant'
+    elif streak >= 52:
+        return '--level-tier-lustrous'
+    else:
+        return '--level-tier-iron'
+
 def update_streak(widget):
     (streak_value, use_alternative_template, new_last_update_time, daily_streak_current, weekly_streak_current, daily_streak_best, weekly_streak_best, top_10p_placements, top_50p_placements) = get_daily_streak(
         osu_client_id=widget.osu_client_id,
@@ -128,6 +176,10 @@ def update_streak(widget):
     widget.popup_top_10p_placements = top_10p_placements
     widget.popup_top_50p_placements = top_50p_placements
     streak_colour_var = get_streak_colour_var(streak_value)
+    daily_streak_colour_var = get_daily_streak_current_colour_var(daily_streak_current)
+    weekly_streak_colour_var = get_weekly_streak_current_colour_var(weekly_streak_current)
+    daily_streak_best_colour_var = get_daily_streak_current_colour_var(daily_streak_best)
+    weekly_streak_best_colour_var = get_weekly_streak_current_colour_var(weekly_streak_best)
     current_template = ALTERNATIVE_TEMPLATE if widget.use_alternative_template else DEFAULT_TEMPLATE
     local_time = datetime.now().astimezone()
     local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -135,7 +187,11 @@ def update_streak(widget):
         current_time=local_time_str,
         current_user=widget.osu_username,
         daily_streak=streak_value,
-        streak_colour_var=streak_colour_var
+        streak_colour_var=streak_colour_var,
+        daily_streak_colour_var=daily_streak_colour_var,
+        weekly_streak_colour_var=weekly_streak_colour_var,
+        daily_streak_best_colour_var=daily_streak_best_colour_var,
+        weekly_streak_best_colour_var=weekly_streak_best_colour_var
     )
     additional_style = """
         * {

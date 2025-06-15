@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer, QP
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings, QWebEngineProfile, QWebEngineView
 from autostart_utils import add_to_startup_registry, remove_from_startup_registry, is_in_startup_registry
 from context_menu_processing import NoSelectWebEngineView, MouseMoveMixin
-from streak_utils import UPDATE_INTERVALS, update_streak, update_osu_settings
+from streak_utils import UPDATE_INTERVALS, update_streak, update_osu_settings, get_streak_colour_var, get_daily_streak_current_colour_var, get_weekly_streak_current_colour_var
 from context_menu import createContextMenu, mousePressEvent
 from widget_keyevents import handle_key_press
 from saveload_settings_utils import load_settings, save_settings as utils_save_settings
@@ -515,6 +515,12 @@ class Widget(QMainWindow, MouseMoveMixin):
         top_10p_placements_str = f"{top_10p_placements}"
         top_50p_placements_str = f"{top_50p_placements}"
 
+        streak_colour_var = get_streak_colour_var(self.popup_streak_value)
+        daily_streak_colour_var = get_daily_streak_current_colour_var(self.popup_daily_streak_current)
+        weekly_streak_colour_var = get_weekly_streak_current_colour_var(self.popup_weekly_streak_current)
+        daily_streak_best_colour_var = get_daily_streak_current_colour_var(self.popup_daily_streak_best)
+        weekly_streak_best_colour_var = get_weekly_streak_current_colour_var(self.popup_weekly_streak_best)
+
         html = HTML_POPUP_TEMPLATE.format(
             streak_value=self.popup_streak_value,
             daily_streak_current=daily_streak_current_str,
@@ -522,7 +528,12 @@ class Widget(QMainWindow, MouseMoveMixin):
             daily_streak_best=daily_streak_best_str,
             weekly_streak_best=weekly_streak_best_str,
             top_10p_placements=top_10p_placements_str,
-            top_50p_placements=top_50p_placements_str
+            top_50p_placements=top_50p_placements_str,
+            streak_colour_var=streak_colour_var,
+            daily_streak_colour_var=daily_streak_colour_var,
+            weekly_streak_colour_var=weekly_streak_colour_var,
+            daily_streak_best_colour_var=daily_streak_best_colour_var,
+            weekly_streak_best_colour_var=weekly_streak_best_colour_var
         )
         self.popup.setHtml(html)
         self.popup.move(popup_pos)
