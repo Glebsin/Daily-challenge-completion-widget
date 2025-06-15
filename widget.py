@@ -12,6 +12,7 @@ from context_menu import createContextMenu, mousePressEvent
 from widget_keyevents import handle_key_press
 from saveload_settings_utils import load_settings, save_settings as utils_save_settings
 from popup_template import HTML_POPUP_TEMPLATE
+from font_base64 import font_base64
 
 class Widget(QMainWindow, MouseMoveMixin):
     def __init__(self):
@@ -533,7 +534,8 @@ class Widget(QMainWindow, MouseMoveMixin):
             daily_streak_colour_var=daily_streak_colour_var,
             weekly_streak_colour_var=weekly_streak_colour_var,
             daily_streak_best_colour_var=daily_streak_best_colour_var,
-            weekly_streak_best_colour_var=weekly_streak_best_colour_var
+            weekly_streak_best_colour_var=weekly_streak_best_colour_var,
+            font_base64=font_base64
         )
         self.popup.setHtml(html)
         self.popup.move(popup_pos)

@@ -2,6 +2,12 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
 <html>
   <head>
     <style>
+      @font-face {{
+        font-family: 'DCCW';
+        src: url(data:font/opentype;base64,{font_base64}) format("opentype");
+        font-weight: normal;
+        font-style: normal;
+      }}
       html, body {{
         overflow: hidden !important;
         scrollbar-width: none !important;
@@ -10,6 +16,7 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
         height: 100%;
         margin: 0;
         padding: 0;
+        font-family: 'DCCW', var(--font-default-override, var(--font-default));
       }}
       body::-webkit-scrollbar, html::-webkit-scrollbar {{
         display: none !important;
@@ -24,7 +31,7 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
         position: absolute;
       }}
       :root {{
-        --font-default: Torus;
+        --font-default: 'DCCW';
         --navbar-height: 50px;
         --scroll-padding-top: calc(var(--navbar-height) + 1em + var(--scroll-padding-top-extra, 0px));
         --page-gutter: 10px;
@@ -40,7 +47,7 @@ HTML_POPUP_TEMPLATE = """<!DOCTYPE html>
         --level-tier-rhodium: #d9f8d3, #a0cf96;
         --level-tier-radiant: #97dcff, #ed82ff;
         --level-tier-lustrous: #ffe600, #ed82ff;
-        font-family: var(--font-default-override, var(--font-default));
+        font-family: 'DCCW', var(--font-default-override, var(--font-default));
       }}
       .daily-challenge-popup {{
         background: hsl(var(--hsl-b4));

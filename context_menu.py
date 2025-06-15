@@ -1,12 +1,12 @@
 from PyQt5.QtWidgets import (
-    QAction, QWidgetAction, QWidget, QVBoxLayout, QLabel, QComboBox, QHBoxLayout, QApplication, QMenu, QToolTip, QSlider, QStyleOptionSlider
+    QAction, QWidgetAction, QWidget, QVBoxLayout, QLabel, QComboBox, QHBoxLayout, QApplication, QToolTip, QSlider, QStyleOptionSlider
 )
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QCursor
 from context_menu_processing import SaveOnFocusOutLineEdit, NonClosingMenu
 from streak_utils import UPDATE_INTERVALS
 
-APP_VERSION = "2025.608.0"
+APP_VERSION = "2025.616.0"
 
 class MyMenu(NonClosingMenu):
     def event(self, e):

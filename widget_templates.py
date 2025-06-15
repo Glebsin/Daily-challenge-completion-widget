@@ -2,9 +2,14 @@ DEFAULT_TEMPLATE = """
 <!DOCTYPE html>
 <style>
   :root {{
-    --font-default: Torus
+    --font-default: DCCW
   }}
-
+@font-face {{
+        font-family: 'DCCW';
+        src: url(data:font/opentype;base64,{font_base64}) format("opentype");
+        font-weight: normal;
+        font-style: normal;
+      }}
   html, body {{
     width: 160px;
     height: 57px;
@@ -146,9 +151,14 @@ ALTERNATIVE_TEMPLATE = """
 <!DOCTYPE html>
 <style>
 :root {{
-    --font-default: Torus
+    --font-default: DCCW
 }}
-
+@font-face {{
+        font-family: 'DCCW';
+        src: url(data:font/opentype;base64,{font_base64}) format("opentype");
+        font-weight: normal;
+        font-style: normal;
+      }}
 html, body {{
     width: 160px;
     height: 57px;
