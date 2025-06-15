@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from ossapi import Ossapi
 from widget_templates import DEFAULT_TEMPLATE, ALTERNATIVE_TEMPLATE
 from saveload_settings_utils import save_settings as utils_save_settings
+from font_base64 import font_base64
 
 UPDATE_INTERVALS = [
     (5 * 60 * 1000, "5 minutes"),
@@ -191,7 +192,8 @@ def update_streak(widget):
         daily_streak_colour_var=daily_streak_colour_var,
         weekly_streak_colour_var=weekly_streak_colour_var,
         daily_streak_best_colour_var=daily_streak_best_colour_var,
-        weekly_streak_best_colour_var=weekly_streak_best_colour_var
+        weekly_streak_best_colour_var=weekly_streak_best_colour_var,
+        font_base64=font_base64
     )
     additional_style = """
         * {

@@ -4,7 +4,12 @@ DEFAULT_TEMPLATE = """
   :root {{
     --font-default: Torus
   }}
-
+@font-face {{
+        font-family: 'Torus';
+        src: url(data:font/opentype;base64,{font_base64}) format("opentype");
+        font-weight: normal;
+        font-style: normal;
+      }}
   html, body {{
     width: 160px;
     height: 57px;
@@ -148,7 +153,12 @@ ALTERNATIVE_TEMPLATE = """
 :root {{
     --font-default: Torus
 }}
-
+@font-face {{
+        font-family: 'Torus';
+        src: url(data:font/opentype;base64,{font_base64}) format("opentype");
+        font-weight: normal;
+        font-style: normal;
+      }}
 html, body {{
     width: 160px;
     height: 57px;
