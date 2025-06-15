@@ -27,12 +27,18 @@ def get_daily_streak(
 ):
     use_alternative_template = False
     new_last_update_time = last_update_time
+    daily_streak_current = 0
+    weekly_streak_current = 0
+    daily_streak_best = 0
+    weekly_streak_best = 0
+    top_10p_placements = 0
+    top_50p_placements = 0
     try:
         if not osu_client_id or not osu_client_secret or not osu_username:
             if enable_logging:
                 print("[osu!api] Skipping API request - missing credentials")
             use_alternative_template = False
-            return '0d', use_alternative_template, new_last_update_time
+            return '0d', use_alternative_template, new_last_update_time, daily_streak_current, weekly_streak_current, daily_streak_best, weekly_streak_best, top_10p_placements, top_50p_placements
         if enable_logging:
             print(f"[osu!api] All credentials present, sending request for user {osu_username}")
         try:
@@ -40,6 +46,12 @@ def get_daily_streak(
             user = api.user(osu_username)
             streak_value = user.daily_challenge_user_stats.playcount
             last_update_date = user.daily_challenge_user_stats.last_update
+            daily_streak_current = user.daily_challenge_user_stats.daily_streak_current
+            weekly_streak_current = user.daily_challenge_user_stats.weekly_streak_current
+            daily_streak_best = user.daily_challenge_user_stats.daily_streak_best
+            weekly_streak_best = user.daily_challenge_user_stats.weekly_streak_best
+            top_10p_placements = getattr(user.daily_challenge_user_stats, "top_10p_placements", 0)
+            top_50p_placements = getattr(user.daily_challenge_user_stats, "top_50p_placements", 0)
             if isinstance(last_update_date, str):
                 last_update_str = last_update_date.split(" ")[0]
             elif isinstance(last_update_date, datetime):
@@ -62,17 +74,17 @@ def get_daily_streak(
             else:
                 use_alternative_template = False
             new_last_update_time = datetime.now(timezone.utc)
-            return f"{streak_value}d", use_alternative_template, new_last_update_time
+            return f"{streak_value}d", use_alternative_template, new_last_update_time, daily_streak_current, weekly_streak_current, daily_streak_best, weekly_streak_best, top_10p_placements, top_50p_placements
         except Exception as api_error:
             if enable_logging:
                 print(f"[osu!api] API request error: {api_error}")
             use_alternative_template = False
-            return '0d', use_alternative_template, new_last_update_time
+            return '0d', use_alternative_template, new_last_update_time, daily_streak_current, weekly_streak_current, daily_streak_best, weekly_streak_best, top_10p_placements, top_50p_placements
     except Exception as e:
         if enable_logging:
             print(f"[osu!api] Error getting daily streak: {e}")
         use_alternative_template = False
-        return '0d', use_alternative_template, new_last_update_time
+        return '0d', use_alternative_template, new_last_update_time, daily_streak_current, weekly_streak_current, daily_streak_best, weekly_streak_best, top_10p_placements, top_50p_placements
 
 def get_streak_colour_var(streak_value):
     try:
@@ -96,8 +108,56 @@ def get_streak_colour_var(streak_value):
     else:
         return '--level-tier-iron'
 
+def get_daily_streak_current_colour_var(daily_streak_current):
+    try:
+        streak = int(str(daily_streak_current).replace('d', '')) if daily_streak_current is not None else 0
+    except (ValueError, TypeError):
+        return '--level-tier-iron'
+    if 0 <= streak <= 4:
+        return '--level-tier-iron'
+    elif 5 <= streak <= 9:
+        return '--level-tier-bronze'
+    elif 10 <= streak <= 29:
+        return '--level-tier-silver'
+    elif 30 <= streak <= 59:
+        return '--level-tier-gold'
+    elif 60 <= streak <= 119:
+        return '--level-tier-platinum'
+    elif 120 <= streak <= 239:
+        return '--level-tier-rhodium'
+    elif 240 <= streak <= 359:
+        return '--level-tier-radiant'
+    elif streak >= 360:
+        return '--level-tier-lustrous'
+    else:
+        return '--level-tier-iron'
+
+def get_weekly_streak_current_colour_var(weekly_streak_current):
+    try:
+        streak = int(str(weekly_streak_current).replace('w', '')) if weekly_streak_current is not None else 0
+    except (ValueError, TypeError):
+        return '--level-tier-iron'
+    if streak == 0:
+        return '--level-tier-iron'
+    elif streak == 1:
+        return '--level-tier-bronze'
+    elif 2 <= streak <= 4:
+        return '--level-tier-silver'
+    elif 5 <= streak <= 8:
+        return '--level-tier-gold'
+    elif 9 <= streak <= 17:
+        return '--level-tier-platinum'
+    elif 18 <= streak <= 34:
+        return '--level-tier-rhodium'
+    elif 35 <= streak <= 51:
+        return '--level-tier-radiant'
+    elif streak >= 52:
+        return '--level-tier-lustrous'
+    else:
+        return '--level-tier-iron'
+
 def update_streak(widget):
-    streak_value, use_alternative_template, new_last_update_time = get_daily_streak(
+    (streak_value, use_alternative_template, new_last_update_time, daily_streak_current, weekly_streak_current, daily_streak_best, weekly_streak_best, top_10p_placements, top_50p_placements) = get_daily_streak(
         osu_client_id=widget.osu_client_id,
         osu_client_secret=widget.osu_client_secret,
         osu_username=widget.osu_username,
@@ -108,7 +168,18 @@ def update_streak(widget):
     )
     widget.use_alternative_template = use_alternative_template
     widget.last_update_time = new_last_update_time
+    widget.popup_streak_value = streak_value
+    widget.popup_daily_streak_current = daily_streak_current
+    widget.popup_weekly_streak_current = weekly_streak_current
+    widget.popup_daily_streak_best = daily_streak_best
+    widget.popup_weekly_streak_best = weekly_streak_best
+    widget.popup_top_10p_placements = top_10p_placements
+    widget.popup_top_50p_placements = top_50p_placements
     streak_colour_var = get_streak_colour_var(streak_value)
+    daily_streak_colour_var = get_daily_streak_current_colour_var(daily_streak_current)
+    weekly_streak_colour_var = get_weekly_streak_current_colour_var(weekly_streak_current)
+    daily_streak_best_colour_var = get_daily_streak_current_colour_var(daily_streak_best)
+    weekly_streak_best_colour_var = get_weekly_streak_current_colour_var(weekly_streak_best)
     current_template = ALTERNATIVE_TEMPLATE if widget.use_alternative_template else DEFAULT_TEMPLATE
     local_time = datetime.now().astimezone()
     local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -116,7 +187,11 @@ def update_streak(widget):
         current_time=local_time_str,
         current_user=widget.osu_username,
         daily_streak=streak_value,
-        streak_colour_var=streak_colour_var
+        streak_colour_var=streak_colour_var,
+        daily_streak_colour_var=daily_streak_colour_var,
+        weekly_streak_colour_var=weekly_streak_colour_var,
+        daily_streak_best_colour_var=daily_streak_best_colour_var,
+        weekly_streak_best_colour_var=weekly_streak_best_colour_var
     )
     additional_style = """
         * {
@@ -140,7 +215,6 @@ def update_streak(widget):
 def update_osu_settings(widget, client_id=None, client_secret=None, username=None):
     settings_changed = False
     updated = False
-
     if client_id is not None and client_id != widget.osu_client_id:
         widget.osu_client_id = client_id
         settings_changed = True
@@ -153,12 +227,10 @@ def update_osu_settings(widget, client_id=None, client_secret=None, username=Non
         widget.osu_username = username
         settings_changed = True
         updated = True
-
     if widget.osu_client_id and widget.osu_client_secret and widget.osu_username and updated:
         if widget.enable_logging:
             print("[osu!api] Credentials updated, calling update_streak")
         widget.update_streak()
-
     if settings_changed:
         current_pos = {
             'x': int(widget.geometry().x()),
