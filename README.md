@@ -5,7 +5,7 @@
 <div align="center">This widget designed for tracking daily challenge completion</div>
 
 <div align="center">
-  <a href="https://github.com/Glebsin/Daily-challenge-completion-widget/releases/tag/2025.608.0">
+  <a href="https://github.com/Glebsin/Daily-challenge-completion-widget/releases/tag/2025.616.0">
     <img src="misc/images/button-download.png" alt="download" />
   </a>
 </div>
@@ -61,6 +61,7 @@ Use context menu on right click to change settings (scaling, always on top toggl
 - Manual update on button in context menu and on "F5"
 - Ability to change widget update timer
 - Tray icon
+- Other daily challenge statistic popup
 
 # My osu profile
 - https://osu.ppy.sh/u/glebsin
