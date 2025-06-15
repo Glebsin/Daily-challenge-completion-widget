@@ -29,25 +29,7 @@ Use context menu on right click to change settings (scaling, always on top toggl
 # Screenshots
 
 <div align="center">
-<table>
-  <tr>
-    <td align="center">
-      <img src="misc/images/screenshot-uncompleted.png" alt="Uncompleted daily challenge widget"/><br>
-      <sub>Uncompleted daily challenge widget</sub>
-    </td>
-    <td align="center">
-      <img src="misc/images/screenshot-completed.png" alt="Completed daily challenge widget"/><br>
-      <sub>Completed daily challenge widget</sub>
-    </td>
-  </tr>
-    <tr>
-    <td colspan="2" align="center">
-      <img src="misc/images/screenshot-contextmenu.png" alt="Long preview" />
-      <br>
-      <sub>Context menu</sub>
-    </td>
-  </tr>
-</table>
+<img src="misc/images/screenshots.png" alt="Screenshots"/>
 </div>
 
 # Features
