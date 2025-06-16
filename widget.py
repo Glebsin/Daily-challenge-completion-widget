@@ -185,7 +185,7 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.tray_time_action = tray_time_action
         self.tray_time_timer.start()
 
-        quit_action = QAction("Quit", self)
+        quit_action = QAction("Close widget", self)
         quit_action.triggered.connect(QApplication.instance().quit)
         tray_menu.addAction(quit_action)
 

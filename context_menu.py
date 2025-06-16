@@ -329,7 +329,7 @@ QComboBox QAbstractItemView::item {{
     versionAction.triggered.connect(copy_version_to_clipboard)
     menu.addAction(versionAction)
     menu.addSeparator()
-    exitAction = menu.addAction('Quit')
+    exitAction = menu.addAction('Close widget')
     exitAction.triggered.connect(self.closeApp)
     menu.setStyleSheet("""
         QMenu {
