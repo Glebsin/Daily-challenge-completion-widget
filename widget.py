@@ -489,9 +489,13 @@ class Widget(QMainWindow, MouseMoveMixin):
             y = desktop.bottom() - popup_height
 
         popup_pos = QPoint(x, y)
+        if self.always_on_top:
+            popup_flags = Qt.Window | Qt.FramelessWindowHint | Qt.Tool | Qt.WindowStaysOnTopHint
+        else:
+            popup_flags = Qt.Window | Qt.FramelessWindowHint | Qt.Tool
         if self.popup is None:
             self.popup = QWebEngineView()
-            self.popup.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.Tool)
+            self.popup.setWindowFlags(popup_flags)
             self.popup.setAttribute(Qt.WA_TranslucentBackground, True)
             self.popup.setAttribute(Qt.WA_ShowWithoutActivating)
             self.popup.setStyleSheet("background: transparent; border: none;")
@@ -501,7 +505,9 @@ class Widget(QMainWindow, MouseMoveMixin):
         else:
             if self.popup.isVisible():
                 return
+            self.popup.setWindowFlags(popup_flags)
             self.popup.setFixedSize(popup_width, popup_height)
+            self.popup.show()
 
         daily_streak_current = getattr(self, "popup_daily_streak_current", 0)
         weekly_streak_current = getattr(self, "popup_weekly_streak_current", 0)
