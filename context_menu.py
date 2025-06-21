@@ -10,7 +10,7 @@ APP_VERSION = "2025.622.0"
 
 class MyMenu(NonClosingMenu):
     def event(self, e):
-        if e.type() == 110: 
+        if e.type() == 110:
             action = self.actionAt(e.pos())
             if action and getattr(action, "_is_version_action", False):
                 QToolTip.showText(e.globalPos(), "Click to copy version")
@@ -19,6 +19,7 @@ class MyMenu(NonClosingMenu):
 
 def createContextMenu(self):
     menu = MyMenu(self)
+    menu.setWindowFlag(Qt.WindowStaysOnTopHint, True)
     scaleWidget = QWidget()
     scaleLayout = QVBoxLayout(scaleWidget)
     scaleLayout.setContentsMargins(5, 5, 5, 5)
@@ -53,7 +54,7 @@ def createContextMenu(self):
             border: none;
             height: 4px;
             background: #555;
-            margin: 0; /* убрали отступы, чтобы ручка доходила до края */
+            margin: 0;
             border-radius: 2px;
         }
         QSlider::handle:horizontal {
@@ -61,7 +62,7 @@ def createContextMenu(self):
             border: 2px solid #388E3C;
             width: 10px;
             height: 24px;
-            margin: -10px 0; /* убрали левый margin */
+            margin: -10px 0;
             border-radius: 2px;
         }
         QSlider::handle:horizontal:pressed {
@@ -371,6 +372,9 @@ QComboBox QAbstractItemView::item {{
     menu_size = menu.sizeHint()
     if pos.x() + menu_size.width() > screen.right():
         pos.setX(pos.x() - menu_size.width())
+    menu.show()
+    menu.raise_()
+    menu.activateWindow()
     menu.exec_(pos)
     self.open_context_menu = None
     self.menu_time_action = None

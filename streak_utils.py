@@ -176,11 +176,33 @@ def update_streak(widget):
     widget.popup_weekly_streak_best = weekly_streak_best
     widget.popup_top_10p_placements = top_10p_placements
     widget.popup_top_50p_placements = top_50p_placements
+
     streak_colour_var = get_streak_colour_var(streak_value)
     daily_streak_colour_var = get_daily_streak_current_colour_var(daily_streak_current)
     weekly_streak_colour_var = get_weekly_streak_current_colour_var(weekly_streak_current)
     daily_streak_best_colour_var = get_daily_streak_current_colour_var(daily_streak_best)
     weekly_streak_best_colour_var = get_weekly_streak_current_colour_var(weekly_streak_best)
+
+    if hasattr(widget, 'open_context_menu') and widget.open_context_menu is not None:
+        if widget.popup and widget.popup.isVisible():
+            from popup_template import HTML_POPUP_TEMPLATE
+            popup_html = HTML_POPUP_TEMPLATE.format(
+                streak_value=streak_value,
+                daily_streak_current=f"{daily_streak_current}d",
+                weekly_streak_current=f"{weekly_streak_current}w",
+                daily_streak_best=f"{daily_streak_best}d",
+                weekly_streak_best=f"{weekly_streak_best}w",
+                top_10p_placements=top_10p_placements,
+                top_50p_placements=top_50p_placements,
+                streak_colour_var=streak_colour_var,
+                daily_streak_colour_var=daily_streak_colour_var,
+                weekly_streak_colour_var=weekly_streak_colour_var,
+                daily_streak_best_colour_var=daily_streak_best_colour_var,
+                weekly_streak_best_colour_var=weekly_streak_best_colour_var,
+                font_base64=font_base64
+            )
+            widget.popup.setHtml(popup_html)
+
     current_template = ALTERNATIVE_TEMPLATE if widget.use_alternative_template else DEFAULT_TEMPLATE
     local_time = datetime.now().astimezone()
     local_time_str = local_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -195,6 +217,7 @@ def update_streak(widget):
         weekly_streak_best_colour_var=weekly_streak_best_colour_var,
         font_base64=font_base64
     )
+
     additional_style = """
         * {
             -webkit-user-select: none !important;

@@ -1,9 +1,9 @@
 import sys
 import os
 from datetime import datetime, timezone
-from PyQt5.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu, QAction, QDesktopWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu, QAction
 from PyQt5.QtGui import QIcon, QCursor
-from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer, QPoint
+from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QTimer, QPoint, QEvent
 from PyQt5.QtWebEngineWidgets import QWebEngineSettings, QWebEngineProfile, QWebEngineView
 from autostart_utils import add_to_startup_registry, remove_from_startup_registry, is_in_startup_registry
 from context_menu_processing import NoSelectWebEngineView, MouseMoveMixin
@@ -19,25 +19,21 @@ class Widget(QMainWindow, MouseMoveMixin):
         super().__init__()
         self.debug_border = False
         self.enable_logging = False if getattr(sys, 'frozen', False) else False
-
         if getattr(sys, 'frozen', False):
             self.settings_file = os.path.join(os.path.dirname(sys.executable), "widget_settings.json")
         else:
             self.settings_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widget_settings.json")
-
         self.settings = load_settings(self.settings_file, self.enable_logging)
         self.scale = self.settings.get('scale', 100)
         self.base_width = 160
         self.base_height = 57
         current_width = int(self.base_width * (self.scale / 100))
         current_height = int(self.base_height * (self.scale / 100))
-
         flags = Qt.FramelessWindowHint | Qt.Tool
         if self.settings.get('always_on_top', True):
             flags |= Qt.WindowStaysOnTopHint
         self.setWindowFlags(flags)
         self.setFixedSize(current_width, current_height)
-
         pos = self.settings.get('position', {'x': 100, 'y': 100})
         screens = QApplication.screens()
         valid_position = False
@@ -56,39 +52,31 @@ class Widget(QMainWindow, MouseMoveMixin):
             center = QApplication.primaryScreen().geometry().center()
             self.move(center.x() - current_width // 2, center.y() - current_height // 2)
         self.oldPos = self.pos()
-
         self.osu_client_id = self.settings.get('osu_client_id', '')
         self.osu_client_secret = self.settings.get('osu_client_secret', '')
         self.osu_username = self.settings.get('osu_username', '')
-
         self.key_sequence = []
         self.always_on_top = self.settings.get('always_on_top', True)
         self.enable_logging = False if getattr(sys, 'frozen', False) else self.settings.get('enable_logging', False)
-
         self.open_context_menu = None
         self.menu_time_action = None
         self.menu_time_timer = QTimer(self)
         self.menu_time_timer.setInterval(1000)
         self.menu_time_timer.timeout.connect(self.update_menu_time_action)
-
         self.tray_time_action = None
         self.tray_time_timer = QTimer(self)
         self.tray_time_timer.setInterval(1000)
         self.tray_time_timer.timeout.connect(self.update_tray_time_action)
-
         if getattr(sys, 'frozen', False) and self.settings.get('autostart', True):
             add_to_startup_registry()
-
         self.animation = None
         self.snap_distance = 10
         self.arrow_step = 2
         self.last_update_time = None
         self.update_interval = self.settings.get('update_interval', UPDATE_INTERVALS[0][0])
-
         self.tray_icon = None
         self.tray_menu = None
         self.init_tray_icon()
-
         self.popup = None
         self.popup_streak_value = '0d'
         self.popup_daily_streak_current = 0
@@ -97,19 +85,27 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.popup_weekly_streak_best = 0
         self.popup_top_10p_placements = 0
         self.popup_top_50p_placements = 0
-
         self.initUI()
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.on_update_timer)
         self.restart_update_timer()
-
         self.cursor_check_timer = QTimer(self)
         self.cursor_check_timer.setInterval(100)
         self.cursor_check_timer.timeout.connect(self.check_cursor_over_widget)
         self.cursor_check_timer.start()
         self._popup_visible = False
+        self.installEventFilter(self)
+        self.is_active = False
+
+    def recreate_popup(self):
+        if self.popup is not None:
+            self.popup.close()
+            self.popup.deleteLater()
+            self.popup = None
 
     def check_cursor_over_widget(self):
+        if self.open_context_menu:  # Do not show popup when menu is open
+            return
         global_mouse_pos = QCursor.pos()
         widget_rect = QRect(self.mapToGlobal(QPoint(0, 0)), self.size())
         if widget_rect.contains(global_mouse_pos):
@@ -121,12 +117,47 @@ class Widget(QMainWindow, MouseMoveMixin):
                 self.hide_popup()
                 self._popup_visible = False
 
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.WindowActivate:
+            self.is_active = True
+            if not self.always_on_top:
+                self.raise_()
+                if self.popup and self.popup.isVisible():
+                    self.popup.raise_()
+        elif event.type() == QEvent.WindowDeactivate:
+            self.is_active = False
+            if not self.always_on_top:
+                QTimer.singleShot(100, self.handle_deactivation)
+        return super().eventFilter(obj, event)
+
+    def handle_deactivation(self):
+        if not self.is_active and not self.always_on_top:
+            self.lower()
+            if self.popup and self.popup.isVisible():
+                self.popup.lower()
+
+    def set_popup_flags(self, always_on_top):
+        if self.popup is None:
+            return
+        popup_flags = Qt.Window | Qt.FramelessWindowHint | Qt.Tool
+        if always_on_top or self.is_active:
+            popup_flags |= Qt.WindowStaysOnTopHint
+        was_visible = self.popup.isVisible()
+        self.popup.hide()
+        self.popup.setWindowFlags(popup_flags)
+        if was_visible:
+            self.popup.show()
+            if always_on_top or self.is_active:
+                self.popup.raise_()
+            else:
+                self.popup.lower()
+
     def init_tray_icon(self):
         icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'DCCW.ico')
         icon = QIcon(icon_path)
         self.tray_icon = QSystemTrayIcon(self)
         self.tray_icon.setIcon(icon)
-        self.tray_icon.setToolTip("DCCW")
+        self.tray_icon.setToolTip("Click to show/hide | DCCW")
         self.update_tray_menu()
         self.tray_icon.activated.connect(self.on_tray_icon_activated)
         self.tray_icon.show()
@@ -168,12 +199,9 @@ class Widget(QMainWindow, MouseMoveMixin):
                 background-color: #2D2D2D;
             }
         """)
-
-        if not self.always_on_top:
-            show_action = QAction("Show", self)
-            show_action.triggered.connect(self.show_from_tray)
-            tray_menu.addAction(show_action)
-
+        show_hide_action = QAction("Show/hide widget", self)
+        show_hide_action.triggered.connect(self.toggle_show_hide_widget)
+        tray_menu.addAction(show_hide_action)
         if self.last_update_time:
             local_update_time = self.last_update_time.astimezone()
             update_str = local_update_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -184,13 +212,17 @@ class Widget(QMainWindow, MouseMoveMixin):
         tray_menu.addAction(tray_time_action)
         self.tray_time_action = tray_time_action
         self.tray_time_timer.start()
-
         quit_action = QAction("Close widget", self)
         quit_action.triggered.connect(QApplication.instance().quit)
         tray_menu.addAction(quit_action)
-
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_menu = tray_menu
+
+    def toggle_show_hide_widget(self):
+        if self.isVisible():
+            self.hide()
+        else:
+            self.show_from_tray()
 
     def update_tray_time_action(self):
         if self.tray_time_action:
@@ -202,10 +234,9 @@ class Widget(QMainWindow, MouseMoveMixin):
             self.tray_time_action.setText(f'Updated: {update_str}')
 
     def show_from_tray(self):
-        if not self.always_on_top:
-            self.showNormal()
-            self.activateWindow()
-            self.raise_()
+        self.showNormal()
+        self.activateWindow()
+        self.raise_()
 
     def toggle_always_on_top(self):
         self.always_on_top = not self.always_on_top
@@ -218,14 +249,14 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.move(current_pos)
         self.save_settings()
         self.update_tray_menu()
+        self.recreate_popup()
 
     def on_tray_icon_activated(self, reason):
         if reason == QSystemTrayIcon.Trigger:
             if self.isVisible():
                 self.hide()
             else:
-                if not self.always_on_top:
-                    self.show_from_tray()
+                self.show_from_tray()
 
     def update_menu_time_action(self):
         if self.open_context_menu and self.menu_time_action:
@@ -258,13 +289,11 @@ class Widget(QMainWindow, MouseMoveMixin):
         self.update_interval = interval_ms
         self.settings['update_interval'] = interval_ms
         self.save_settings()
-
         now = datetime.now(timezone.utc)
         if self.last_update_time is None:
             self.last_update_time = now
         elapsed = (now - self.last_update_time).total_seconds() * 1000
         time_to_next = max(0, self.update_interval - elapsed)
-
         self.update_timer.stop()
         self.restart_update_timer(int(time_to_next))
         def restart_timer():
@@ -410,7 +439,9 @@ class Widget(QMainWindow, MouseMoveMixin):
         event.accept()
 
     def createContextMenu(self):
+        self.context_menu_is_open = True
         createContextMenu(self)
+        self.context_menu_is_open = False
 
     def mousePressEvent(self, event):
         mousePressEvent(self, event)
@@ -434,12 +465,17 @@ class Widget(QMainWindow, MouseMoveMixin):
     def leaveEvent(self, event):
         pass
 
-    def show_popup(self):
+    def show_popup(self, html_override=None):
+        if self.open_context_menu:
+            return
+        if self.popup is not None:
+            self.popup.close()
+            self.popup.deleteLater()
+            self.popup = None
         popup_width = 420
         popup_height = 210
         global_widget_pos = self.mapToGlobal(QPoint(0, 0))
         widget_rect = QRect(global_widget_pos, self.size())
-
         matching_screen = None
         for screen in QApplication.screens():
             geo = screen.geometry()
@@ -449,12 +485,10 @@ class Widget(QMainWindow, MouseMoveMixin):
         if matching_screen is None:
             matching_screen = QApplication.primaryScreen().availableGeometry()
         desktop = matching_screen
-
         right_space = desktop.right() - widget_rect.right()
         left_space = widget_rect.left() - desktop.left()
         below_space = desktop.bottom() - widget_rect.bottom()
         above_space = widget_rect.top() - desktop.top()
-
         if below_space < popup_height and above_space >= popup_height:
             x = widget_rect.left() + (widget_rect.width() - popup_width) // 2
             x = max(desktop.left(), min(x, desktop.right() - popup_width))
@@ -478,7 +512,6 @@ class Widget(QMainWindow, MouseMoveMixin):
         else:
             x = widget_rect.left() + (widget_rect.width() - popup_width) // 2
             y = widget_rect.top() + (widget_rect.height() - popup_height) // 2
-
         if x < desktop.left():
             x = desktop.left()
         if x + popup_width > desktop.right():
@@ -487,28 +520,18 @@ class Widget(QMainWindow, MouseMoveMixin):
             y = desktop.top()
         if y + popup_height > desktop.bottom():
             y = desktop.bottom() - popup_height
-
         popup_pos = QPoint(x, y)
-        if self.always_on_top:
-            popup_flags = Qt.Window | Qt.FramelessWindowHint | Qt.Tool | Qt.WindowStaysOnTopHint
-        else:
-            popup_flags = Qt.Window | Qt.FramelessWindowHint | Qt.Tool
-        if self.popup is None:
-            self.popup = QWebEngineView()
-            self.popup.setWindowFlags(popup_flags)
-            self.popup.setAttribute(Qt.WA_TranslucentBackground, True)
-            self.popup.setAttribute(Qt.WA_ShowWithoutActivating)
-            self.popup.setStyleSheet("background: transparent; border: none;")
-            self.popup.setFixedSize(popup_width, popup_height)
-            self.popup.page().setBackgroundColor(Qt.transparent)
-            self.popup.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        else:
-            if self.popup.isVisible():
-                return
-            self.popup.setWindowFlags(popup_flags)
-            self.popup.setFixedSize(popup_width, popup_height)
-            self.popup.show()
-
+        self.popup = QWebEngineView()
+        popup_flags = Qt.Window | Qt.FramelessWindowHint | Qt.Tool
+        if self.always_on_top or self.is_active:
+            popup_flags |= Qt.WindowStaysOnTopHint
+        self.popup.setWindowFlags(popup_flags)
+        self.popup.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.popup.setAttribute(Qt.WA_ShowWithoutActivating)
+        self.popup.setStyleSheet("background: transparent; border: none;")
+        self.popup.setFixedSize(popup_width, popup_height)
+        self.popup.page().setBackgroundColor(Qt.transparent)
+        self.popup.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         daily_streak_current = getattr(self, "popup_daily_streak_current", 0)
         weekly_streak_current = getattr(self, "popup_weekly_streak_current", 0)
         daily_streak_best = getattr(self, "popup_daily_streak_best", 0)
@@ -521,32 +544,36 @@ class Widget(QMainWindow, MouseMoveMixin):
         weekly_streak_best_str = f"{weekly_streak_best}w"
         top_10p_placements_str = f"{top_10p_placements}"
         top_50p_placements_str = f"{top_50p_placements}"
-
         streak_colour_var = get_streak_colour_var(self.popup_streak_value)
         daily_streak_colour_var = get_daily_streak_current_colour_var(self.popup_daily_streak_current)
         weekly_streak_colour_var = get_weekly_streak_current_colour_var(self.popup_weekly_streak_current)
         daily_streak_best_colour_var = get_daily_streak_current_colour_var(self.popup_daily_streak_best)
         weekly_streak_best_colour_var = get_weekly_streak_current_colour_var(self.popup_weekly_streak_best)
-
-        html = HTML_POPUP_TEMPLATE.format(
-            streak_value=self.popup_streak_value,
-            daily_streak_current=daily_streak_current_str,
-            weekly_streak_current=weekly_streak_current_str,
-            daily_streak_best=daily_streak_best_str,
-            weekly_streak_best=weekly_streak_best_str,
-            top_10p_placements=top_10p_placements_str,
-            top_50p_placements=top_50p_placements_str,
-            streak_colour_var=streak_colour_var,
-            daily_streak_colour_var=daily_streak_colour_var,
-            weekly_streak_colour_var=weekly_streak_colour_var,
-            daily_streak_best_colour_var=daily_streak_best_colour_var,
-            weekly_streak_best_colour_var=weekly_streak_best_colour_var,
-            font_base64=font_base64
-        )
+        if html_override is not None:
+            html = html_override
+        else:
+            html = HTML_POPUP_TEMPLATE.format(
+                streak_value=self.popup_streak_value,
+                daily_streak_current=daily_streak_current_str,
+                weekly_streak_current=weekly_streak_current_str,
+                daily_streak_best=daily_streak_best_str,
+                weekly_streak_best=weekly_streak_best_str,
+                top_10p_placements=top_10p_placements_str,
+                top_50p_placements=top_50p_placements_str,
+                streak_colour_var=streak_colour_var,
+                daily_streak_colour_var=daily_streak_colour_var,
+                weekly_streak_colour_var=weekly_streak_colour_var,
+                daily_streak_best_colour_var=daily_streak_best_colour_var,
+                weekly_streak_best_colour_var=weekly_streak_best_colour_var,
+                font_base64=font_base64
+            )
         self.popup.setHtml(html)
         self.popup.move(popup_pos)
         self.popup.show()
-        self.popup.raise_()
+        if self.always_on_top or self.is_active:
+            self.popup.raise_()
+        else:
+            self.popup.lower()
 
     def hide_popup(self):
         if self.popup is not None:
