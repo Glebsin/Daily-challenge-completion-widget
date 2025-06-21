@@ -6,7 +6,7 @@ from PyQt5.QtGui import QCursor
 from context_menu_processing import SaveOnFocusOutLineEdit, NonClosingMenu
 from streak_utils import UPDATE_INTERVALS
 
-APP_VERSION = "2025.616.0"
+APP_VERSION = "2025.622.0"
 
 class MyMenu(NonClosingMenu):
     def event(self, e):
@@ -234,7 +234,7 @@ def createContextMenu(self):
     manualUpdateAction.triggered.connect(self.update_streak)
     menu.addAction(manualUpdateAction)
     menu.addSeparator()
-    alwaysOnTopAction = QAction('Always on Top', self)
+    alwaysOnTopAction = QAction('Always on top', self)
     alwaysOnTopAction.setCheckable(True)
     alwaysOnTopAction.setChecked(self.always_on_top)
     alwaysOnTopAction.triggered.connect(self.toggle_always_on_top)
